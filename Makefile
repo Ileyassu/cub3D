@@ -3,7 +3,7 @@ SRC = \
 
 OBJ = $(SRC:.c=.o)
 
-MINILIBX = minilibx-linux/libmlx_Linux.a
+MINILIBX = mlx-linux/libmlx_Linux.a
 
 CFLAGS = -Wall -Wextra -Werror
 
