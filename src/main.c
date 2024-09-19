@@ -4,11 +4,31 @@ char map[6][6] = {
         "111111",
         "100001",
         "100001",
-        "100001",
+        "10N001",
         "100001",
         "111111"
     };
 
+void find_player_pos(t_mlx *mlx)
+{
+    int x = 0;
+    int y = 0;
+    int cell_size = 500 / 6;
+    while(x < 6)
+    {
+        y = 0;
+        while(y < 6)
+        {
+            if(map[x][y] == 'N')
+            {
+                mlx->player->p_x = cell_size * x;
+                mlx->player->p_y = cell_size * y;
+            }
+            y++;
+        }
+        x++;
+    }
+}
 void init_image(t_mlx *mlx)
 {
     mlx->img = malloc(sizeof(t_img));
@@ -30,7 +50,6 @@ void draw_map(t_mlx *mlx)
     int map_width = 6;
     int map_height = 6;
     int cell_size = 500 / map_width; // Assuming the window size is 500x500
-
     int i = 0;
     int j = 0;
 
@@ -51,8 +70,13 @@ void draw_map(t_mlx *mlx)
                         y++;
                     }
                     x++;
-                }   
-            } 
+                }
+            }
+            // if (map[i][j] == 'N')
+            // {
+            //     mlx->player->p_x = i * cell_size;
+            //     mlx->player->p_y = j * cell_size;
+            // }
             j++;
         }
         i++;
@@ -115,7 +139,7 @@ int move_player(unsigned int key, void *ptr)
     int cell_size = 500 / 6;
     int new_x = mlx->player->p_x;
     int new_y = mlx->player->p_y;
-
+    printf("player_x = %d --- player_y = %d\n", mlx->player->p_x, mlx->player->p_y);
     if (key == 65307) // ESC key to exit
     {
         exit(0);
@@ -158,15 +182,14 @@ int main()
     t_mlx mlx;
     t_player player;
 
-    player.p_x = 0;
-    player.p_y = 0;
     mlx.player = &player;
+    find_player_pos(&mlx);
     mlx.mlx = mlx_init();
     init_image(&mlx);
     mlx.mlx_win = mlx_new_window(mlx.mlx, 500, 500, "test");
     //draw_player(&mlx, mlx.mlx_win, 10, 0xFF0000); // Draw a 10x10 red square
-    //draw_scene(&mlx);
-    draw_map(&mlx);
+    draw_scene(&mlx);
+    //draw_map(&mlx);
     mlx_key_hook(mlx.mlx_win, move_player, &mlx);
     mlx_loop(mlx.mlx);
 }
