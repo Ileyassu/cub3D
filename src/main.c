@@ -1,34 +1,5 @@
 #include "../libraries/cublib.h"
 
-char map[6][6] = {
-        "111111",
-        "100001",
-        "100001",
-        "10N001",
-        "100001",
-        "111111"
-    };
-
-void find_player_pos(t_mlx *mlx)
-{
-    int x = 0;
-    int y = 0;
-    int cell_size = 500 / 6;
-    while(x < 6)
-    {
-        y = 0;
-        while(y < 6)
-        {
-            if(map[x][y] == 'N')
-            {
-                mlx->player->p_x = cell_size * x;
-                mlx->player->p_y = cell_size * y;
-            }
-            y++;
-        }
-        x++;
-    }
-}
 void init_image(t_mlx *mlx)
 {
     mlx->img = malloc(sizeof(t_img));
@@ -72,17 +43,27 @@ void draw_map(t_mlx *mlx)
                     x++;
                 }
             }
-            // if (map[i][j] == 'N')
-            // {
-            //     mlx->player->p_x = i * cell_size;
-            //     mlx->player->p_y = j * cell_size;
-            // }
             j++;
         }
         i++;
     }
 }
+void draw_player(t_mlx *mlx, int size)
+{
+    int i = 0;
+    int j = 0;
 
+    while(i < size)
+    {
+        j = 0;
+        while(j < size)
+        {
+            my_mlx_pixel_put(mlx, mlx->player->p_x + i, mlx->player->p_y + j, 0xFF0000);
+            j++;
+        }
+        i++;
+    }
+}
 void draw_scene (t_mlx *mlx)
 {
     int x = 0;
@@ -104,33 +85,8 @@ void draw_scene (t_mlx *mlx)
     y = 0;
     int player_size = 10;
     draw_map(mlx);
-    while(y < player_size)
-    {
-        x = 0;
-        while(x < player_size)
-        {
-            my_mlx_pixel_put(mlx, mlx->player->p_x + x, mlx->player->p_y + y, 0xFF0000);
-            x++;
-        }
-        y++;
-    }
+    draw_player(mlx, player_size);
     mlx_put_image_to_window(mlx->mlx, mlx->mlx_win, mlx->img->img, 0, 0);
-}
-void draw_player(t_mlx *mlx, void *win, int size, int color)
-{
-    int i = 0;
-    int j = 0;
-
-    while(i < size)
-    {
-        j = 0;
-        while(j < size)
-        {
-            mlx_pixel_put(mlx->mlx, win, mlx->player->p_x + i, mlx->player->p_y + j, color);
-            j++;
-        }
-        i++;
-    }
 }
 
 int move_player(unsigned int key, void *ptr)
@@ -172,7 +128,6 @@ int move_player(unsigned int key, void *ptr)
     mlx_clear_window(mlx->mlx, mlx->mlx_win);
     draw_map(mlx);
     draw_scene(mlx);
-    //draw_player(mlx, mlx->mlx_win, 10, 0xFF0000);
     printf("key = %u\n", key);
     return 0;
 }
@@ -187,9 +142,7 @@ int main()
     mlx.mlx = mlx_init();
     init_image(&mlx);
     mlx.mlx_win = mlx_new_window(mlx.mlx, 500, 500, "test");
-    //draw_player(&mlx, mlx.mlx_win, 10, 0xFF0000); // Draw a 10x10 red square
     draw_scene(&mlx);
-    //draw_map(&mlx);
     mlx_key_hook(mlx.mlx_win, move_player, &mlx);
     mlx_loop(mlx.mlx);
 }

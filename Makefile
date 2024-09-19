@@ -1,5 +1,7 @@
 SRC = \
-	src/main.c
+	src/main.c \
+	src/utils/find_player_pos.c \
+	src/map/map.c
 
 OBJ = $(SRC:.c=.o)
 
