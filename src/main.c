@@ -93,44 +93,68 @@ int move_player(unsigned int key, void *ptr)
 {
     t_mlx *mlx = (t_mlx *)ptr;
     int cell_size = 500 / 6;
+    int player_size = 10;
     int new_x = mlx->player->p_x;
     int new_y = mlx->player->p_y;
+
     printf("player_x = %d --- player_y = %d\n", mlx->player->p_x, mlx->player->p_y);
+
     if (key == 65307) // ESC key to exit
     {
         exit(0);
     }
     else if (key == 119) // W key (move up)
     {
-        new_y -= 10; // Move up
+        // Check if there's enough space above to move up
+        if (new_y - 2 >= 0 && 
+            map[(new_y - 2) / cell_size][new_x / cell_size] != '1' &&
+            map[(new_y - 2) / cell_size][(new_x + player_size - 2) / cell_size] != '1')
+        {
+            new_y -= 2; // Move up
+        }
     }
     else if (key == 115) // S key (move down)
     {
-        new_y += 10; // Move down
+        // Check if there's enough space below to move down
+        if ((new_y + player_size + 2) < (cell_size * 6) &&
+            map[(new_y + player_size + 2) / cell_size][new_x / cell_size] != '1' &&
+            map[(new_y + player_size + 2) / cell_size][(new_x + player_size -2) / cell_size] != '1')
+        {
+            new_y += 2; // Move down
+        }
     }
     else if (key == 97)  // A key (move left)
     {
-        new_x -= 10; // Move left
+        // Check if there's enough space to the left to move left
+        if (new_x - 2 >= 0 &&
+            map[new_y / cell_size][(new_x - 2) / cell_size] != '1' &&
+            map[(new_y + player_size -2) / cell_size][(new_x - 2) / cell_size] != '1')
+        {
+            new_x -= 2; // Move left
+        }
     }
     else if (key == 100) // D key (move right)
     {
-        new_x += 10; // Move right
+        // Check if there's enough space to the right to move right
+        if ((new_x + player_size + 2) < (cell_size * 6) &&
+            map[new_y / cell_size][(new_x + player_size + 2) / cell_size] != '1' &&
+            map[(new_y + player_size - 1) / cell_size][(new_x + player_size + 2) / cell_size] != '1')
+        {
+            new_x += 2; // Move right
+        }
     }
-    int map_x = new_x / cell_size;
-    int map_y = new_y / cell_size;
 
-    if (map[map_x][map_y] != '1')
-    {
-        mlx->player->p_x = new_x;
-        mlx->player->p_y = new_y;
-    }
+    // Update player's position only if it doesn't hit a wall
+    mlx->player->p_x = new_x;
+    mlx->player->p_y = new_y;
+
     // Clear the window and redraw the player at the new position
     mlx_clear_window(mlx->mlx, mlx->mlx_win);
-    draw_map(mlx);
     draw_scene(mlx);
     printf("key = %u\n", key);
     return 0;
 }
+
 
 int main()
 {
