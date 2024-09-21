@@ -13,6 +13,10 @@ typedef struct s_player
 {
     int p_x;
     int p_y;
+    int up;
+    int down;
+    int left;
+    int right;
 }  t_player;
 
 typedef struct s_img 

@@ -162,6 +162,11 @@ int main()
     t_player player;
 
     mlx.player = &player;
+    mlx.player->up = 0; // should add key release and key pressed
+    mlx.player->down = 0;
+    mlx.player->right = 0;
+    mlx.player->left = 0;
+
     find_player_pos(&mlx);
     mlx.mlx = mlx_init();
     init_image(&mlx);
