@@ -11,8 +11,13 @@ extern char map[6][6];
 
 typedef struct s_player
 {
-    int p_x;
-    int p_y;
+    float p_x;
+    float p_y;
+    float dir_x;
+    float dir_y;
+    float angle;
+    float move_speed;
+    float rot_speed;
     int up;
     int down;
     int left;
@@ -42,6 +47,6 @@ void my_mlx_pixel_put(t_mlx *mlx, int x, int y, int color);
 void draw_map(t_mlx *mlx);
 void draw_player(t_mlx *mlx, int size);
 void draw_scene (t_mlx *mlx);
-int move_player(unsigned int key, void *ptr);
+int move_player(int key, void *ptr);
 
 #endif
