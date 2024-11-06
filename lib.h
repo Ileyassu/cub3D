@@ -52,6 +52,7 @@ void draw_player(t_mlx *mlx);
 void my_mlx_pixel_put(t_img *img, int x, int y, int color);
 void draw_line (t_mlx *mlx);
 void update_player(t_mlx *mlx);
+int does_hit_wall(t_mlx *mlx, int x, int y);
 void player_center_position(t_mlx *mlx, int x, int y);
 
 #endif

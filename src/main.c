@@ -112,29 +112,29 @@ int key_press(int key_code, void *mlx_ptr)
 {
     t_mlx *mlx;
 
-    mlx = (t_mlx *)mlx_ptr;
-    if (key_code == 53)
-        exit(0);
-    else if (key_code == 13)
-    {
-        mlx->player.walk_direction = 1;
-        refreshing(mlx);
-    }
-    else if(key_code == 1)
-    {
-        mlx->player.walk_direction = -1;
-        refreshing(mlx);
-    }
-    else if(key_code == 0)
-    {
-        mlx->player.turn_direction = 1;
-        refreshing(mlx);
-    }
-    else if(key_code == 2)
-    {
-        mlx->player.turn_direction = -1;
-        refreshing(mlx);
-    }
+        mlx = (t_mlx *)mlx_ptr;
+        if (key_code == 53)
+            exit(0);
+        else if (key_code == 13)
+        {
+            mlx->player.walk_direction = 1;
+            refreshing(mlx);
+        }
+        else if(key_code == 1)
+        {
+            mlx->player.walk_direction = -1;
+            refreshing(mlx);
+        }
+        else if(key_code == 0)
+        {
+            mlx->player.turn_direction = 1;
+            refreshing(mlx);
+        }
+        else if(key_code == 2)
+        {
+            mlx->player.turn_direction = -1;
+            refreshing(mlx);
+        }
     return 0;
 }
 

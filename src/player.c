@@ -1,5 +1,20 @@
 #include "../lib.h"
 
+int does_hit_wall(t_mlx *mlx, int x, int y)
+{
+    int right_x = x + (mlx->player.size/2);
+    int bottom_y = y + (mlx->player.size/2);
+    int converting_x_to_grid = floor(right_x / TILE_SIZE);
+    int converting_y_to_grid = floor(bottom_y / TILE_SIZE);
+
+    if(map[converting_y_to_grid][converting_x_to_grid] == '1')
+    {
+        printf("oups !! you're hitting a wall\n");
+        return (1);
+    }
+    return 0;
+}
+
 void init_player(t_mlx *mlx)
 {
     player_position(mlx);
@@ -9,11 +24,14 @@ void init_player(t_mlx *mlx)
     mlx->player.walk_direction = 0;
     mlx->player.rotation_angle = M_PI/2;
     mlx->player.move_speed = 3.0;
-    mlx->player.rotation_speed = 3 * (M_PI / 180); //formula to get radius angle from degrees
+    mlx->player.rotation_speed = 10 * (M_PI / 180); //formula to get radius angle from degrees
 }
 
 void update_player(t_mlx *mlx)
 {
+    int old_x = mlx->player.p_x;
+    int old_y = mlx->player.p_y;
+
     printf("-------------------------------------------------\n");
     printf("turn direction = %f\n", mlx->player.turn_direction);
     float move_step = 0;
@@ -26,7 +44,16 @@ void update_player(t_mlx *mlx)
     move_step = tmp_walk_direction * mlx->player.move_speed;
     mlx->player.p_x += cos(mlx->player.rotation_angle) * move_step;
     mlx->player.p_y += sin(mlx->player.rotation_angle) * move_step;
+    if(does_hit_wall(mlx ,mlx->player.p_x, mlx->player.p_y))
+    {
+        mlx->player.p_x = old_x;
+        mlx->player.p_y = old_y;
+    }
     printf("new rotation angle = %f\n", mlx->player.rotation_angle);
+    printf("p_x = %d ----- p_y = %d\n", (int)mlx->player.p_x, (int)mlx->player.p_y);
+    printf("p_x Math floor test = %d\n", (int)floor(mlx->player.p_x / 32));
+    printf("p_y Math floor test = %d\n", (int)floor(mlx->player.p_y / 32));
+
 }
 
 void draw_line (t_mlx *mlx)
@@ -41,7 +68,7 @@ void draw_line (t_mlx *mlx)
     printf("cos(angle) = %f\n",mlx->player.p_x + 50 * cos(angle));
     printf("sin(angle) = %f\n",mlx->player.p_y + 50 * sin(angle));
     printf("angle = %f\n", angle);
-    while(i < 50)
+    while(i < 30)
     {
         x = mlx->player.p_x + i * cos(angle);
         y = mlx->player.p_y + i * sin(angle);
@@ -91,5 +118,4 @@ void draw_player(t_mlx *mlx)
     draw_line(mlx);
     printf("turn direction = %f\n", mlx->player.turn_direction);
     printf("turn direction = %f\n", mlx->player.walk_direction);
-
 }
