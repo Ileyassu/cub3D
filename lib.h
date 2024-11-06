@@ -51,7 +51,7 @@ void init_player(t_mlx *mlx);
 void draw_player(t_mlx *mlx);
 void my_mlx_pixel_put(t_img *img, int x, int y, int color);
 void draw_line (t_mlx *mlx);
-void update_line_angle (t_mlx *mlx);
+void update_player(t_mlx *mlx);
 void player_center_position(t_mlx *mlx, int x, int y);
 
 #endif

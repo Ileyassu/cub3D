@@ -97,6 +97,17 @@ void draw_scene(t_mlx *mlx)
     draw_map(mlx);
     draw_player(mlx);
 }
+
+void refreshing(t_mlx *mlx)
+{
+    update_player (mlx);
+    mlx_clear_window(mlx->mlx, mlx->win);
+    draw_scene(mlx);
+    mlx_put_image_to_window(mlx->mlx, mlx->win, mlx->img.img, 0, 0);
+    mlx->player.turn_direction = 0;
+    mlx->player.walk_direction = 0;
+}
+
 int key_press(int key_code, void *mlx_ptr)
 {
     t_mlx *mlx;
@@ -106,23 +117,24 @@ int key_press(int key_code, void *mlx_ptr)
         exit(0);
     else if (key_code == 13)
     {
-        mlx->player.walk_direction += 1; 
+        mlx->player.walk_direction = 1;
+        refreshing(mlx);
     }
     else if(key_code == 1)
     {
-        mlx->player.walk_direction -= 1;
+        mlx->player.walk_direction = -1;
+        refreshing(mlx);
     }
     else if(key_code == 0)
     {
-        mlx->player.turn_direction -= 1;
+        mlx->player.turn_direction = 1;
+        refreshing(mlx);
     }
     else if(key_code == 2)
     {
-        mlx->player.turn_direction += 1;
+        mlx->player.turn_direction = -1;
+        refreshing(mlx);
     }
-    mlx_clear_window(mlx->mlx, mlx->win);
-    draw_scene(mlx);
-    mlx_put_image_to_window(mlx->mlx, mlx->win, mlx->img.img, 0, 0);
     return 0;
 }
 
@@ -135,22 +147,22 @@ int key_release(int key_code, void *mlx_ptr)
         exit(0);
     else if (key_code == 13)
     {
-        mlx->player.walk_direction += 1; 
+        mlx->player.walk_direction = 0; 
         printf("keyPressed = w released\n");
     }
     else if(key_code == 1)
     {
-        mlx->player.walk_direction -= 1;
+        mlx->player.walk_direction = 0;
         printf("keyPressed = s released\n");
     }
     else if(key_code == 0)
     {
-        mlx->player.turn_direction -= 1;
+        mlx->player.turn_direction = 0;
         printf("keyPressed = a released\n");
     }
     else if(key_code == 2)
     {
-        mlx->player.turn_direction += 1;
+        mlx->player.turn_direction = 0;
         printf("keyPressed = d released\n");
     }
     return 0;
