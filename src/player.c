@@ -1,6 +1,6 @@
 #include "../lib.h"
 
-int does_hit_wall(t_mlx *mlx, int x, int y)
+int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y)
 {
     int right_x = x + (mlx->player.size/2);
     int bottom_y = y + (mlx->player.size/2);
@@ -15,10 +15,25 @@ int does_hit_wall(t_mlx *mlx, int x, int y)
     return 0;
 }
 
+int does_hit_left_top_wall(t_mlx *mlx, int x, int y)
+{
+    int left_x = x + (mlx->player.size/-2);
+    int top_y = y + (mlx->player.size/-2);
+    int converting_x_to_grid = floor(left_x / TILE_SIZE);
+    int converting_y_to_grid = floor(top_y / TILE_SIZE);
+
+    if(map[converting_y_to_grid][converting_x_to_grid] == '1')
+    {
+        printf("oups !! you're hitting a wall\n");
+        return (1);
+    }
+    return 0;
+}
+
 void init_player(t_mlx *mlx)
 {
     player_position(mlx);
-    mlx->player.size = 10;
+    mlx->player.size = 6;
     mlx->player.radius = 3;
     mlx->player.turn_direction = 0;
     mlx->player.walk_direction = 0;
@@ -44,7 +59,8 @@ void update_player(t_mlx *mlx)
     move_step = tmp_walk_direction * mlx->player.move_speed;
     mlx->player.p_x += cos(mlx->player.rotation_angle) * move_step;
     mlx->player.p_y += sin(mlx->player.rotation_angle) * move_step;
-    if(does_hit_wall(mlx ,mlx->player.p_x, mlx->player.p_y))
+    if(does_hit_right_Bottom_wall(mlx ,mlx->player.p_x, mlx->player.p_y) || 
+        does_hit_left_top_wall(mlx, mlx->player.p_x, mlx->player.p_y))
     {
         mlx->player.p_x = old_x;
         mlx->player.p_y = old_y;
