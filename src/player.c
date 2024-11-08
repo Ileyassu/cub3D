@@ -1,5 +1,10 @@
 #include "../lib.h"
 
+// void ray_casting (t_mlx *mlx)
+// {
+
+// }
+
 int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y)
 {
     int right_x = x + (mlx->player.size/2);
@@ -78,8 +83,7 @@ void draw_line (t_mlx *mlx)
     float x = 0;
     float y = 0;
     float angle = mlx->player.rotation_angle;
-    // int j = 0;
-    // int k = 0;
+    int j = 0;
 
     printf("cos(angle) = %f\n",mlx->player.p_x + 50 * cos(angle));
     printf("sin(angle) = %f\n",mlx->player.p_y + 50 * sin(angle));
@@ -94,17 +98,29 @@ void draw_line (t_mlx *mlx)
         }
         i++;
     }
-
-    // while(j < 10)
-    // {
-    //     k = 0;
-    //     while(k < 10)
-    //     {
-    //         my_mlx_pixel_put(&mlx->img, k + (x - (10 / 2)), j + (y - (10 / 2)), 0x00000000);
-    //         k++;
-    //     }
-    //     j++;
-    // }
+    float start_column = angle - (30 * (M_PI / 180));
+    float end_column = angle + (30 * (M_PI / 180));
+    printf("start_column = %f\n",start_column);
+    
+    x = 0;
+    y = 0;
+    while(j < 30)
+    {
+            x = mlx->player.p_x + j * (cos(start_column));
+            y = mlx->player.p_y + j * (sin(start_column));
+            my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00000000);
+            j++;
+    }
+    x = 0;
+    y = 0;
+    j = 0;
+    while(j < 30)
+    {
+            x = mlx->player.p_x + j * (cos(end_column));
+            y = mlx->player.p_y + j * (sin(end_column));
+            my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00000000);
+            j++;
+    }
 }
 
 void player_center_position(t_mlx *mlx, int x, int y)
