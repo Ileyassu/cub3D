@@ -1,9 +1,66 @@
 #include "../lib.h"
 
-// void ray_casting (t_mlx *mlx)
-// {
+float normalize_angle(float angle) {
+    angle = remainder(angle, 2 * M_PI);
+    if (angle < 0) {
+        angle = (2 * M_PI) + angle;
+    }
+    return angle;
+}
 
-// }
+void ray (t_mlx *mlx, t_ray *ray)
+{
+    ray->ray_angle = normalize_angle(mlx->player.start_column_angle);
+    ray->wall_hit_x = 0;
+    ray->wall_hit_y = 0;
+    ray->distance = 0;
+
+    ray->is_ray_facing_down = ray->ray_angle > 0 && ray->ray_angle <  M_PI; //condition
+    ray->is_ray_facing_up = !ray->is_ray_facing_down;
+    ray->is_ray_facing_right = ray->ray_angle < 0.5 * M_PI || ray->ray_angle > 1.5 * M_PI;
+    ray->is_ray_facing_left = !ray->is_ray_facing_right;
+}
+
+void ray_init (t_mlx *mlx)
+{
+    int i;
+
+    i = 0;
+    while(i < mlx->player.number_of_rays)
+    {
+        ray(mlx, &mlx->player.rays[i]);
+        i++;
+    }
+}
+
+void init_player(t_mlx *mlx)
+{
+    player_position(mlx);
+    mlx->player.size = 4;
+    mlx->player.radius = 3;
+    mlx->player.turn_direction = 0;
+    mlx->player.walk_direction = 0;
+    mlx->player.rotation_angle = M_PI/2;
+    mlx->player.move_speed = 3.0;
+    mlx->player.rotation_speed = 10 * (M_PI / 180); //formula to get radius angle from degrees
+    mlx->player.fov = 60 * (M_PI / 180);
+    mlx->player.wall_strip_width = 10;
+    mlx->player.number_of_rays = TD_MAP_SIZE/mlx->player.wall_strip_width;
+    mlx->player.rays = malloc(sizeof(t_ray) * mlx->player.number_of_rays);
+    if (!mlx->player.rays)
+        exit(1);
+    mlx->player.start_column_angle = 0;
+    ray_init (mlx);
+}
+
+int map_has_wall_at(float x, float y) {
+    if (x < 0 || x > TD_MAP_SIZE|| y < 0 || y > TD_MAP_SIZE) {
+        return 1;
+    }
+    int mapGridIndexX = floor(x / TILE_SIZE);
+    int mapGridIndexY = floor(y / TILE_SIZE);
+    return map[mapGridIndexY][mapGridIndexX] != 0;
+}
 
 int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y)
 {
@@ -35,18 +92,6 @@ int does_hit_left_top_wall(t_mlx *mlx, int x, int y)
     return 0;
 }
 
-void init_player(t_mlx *mlx)
-{
-    player_position(mlx);
-    mlx->player.size = 6;
-    mlx->player.radius = 3;
-    mlx->player.turn_direction = 0;
-    mlx->player.walk_direction = 0;
-    mlx->player.rotation_angle = M_PI/2;
-    mlx->player.move_speed = 3.0;
-    mlx->player.rotation_speed = 10 * (M_PI / 180); //formula to get radius angle from degrees
-}
-
 void update_player(t_mlx *mlx)
 {
     int old_x = mlx->player.p_x;
@@ -74,7 +119,56 @@ void update_player(t_mlx *mlx)
     printf("p_x = %d ----- p_y = %d\n", (int)mlx->player.p_x, (int)mlx->player.p_y);
     printf("p_x Math floor test = %d\n", (int)floor(mlx->player.p_x / 32));
     printf("p_y Math floor test = %d\n", (int)floor(mlx->player.p_y / 32));
+}
 
+void cast(t_mlx *mlx, t_ray *ray)
+{
+    float xintercept;
+    float yintercept;
+    float xstep;
+    float ystep;
+
+    yintercept = floor(mlx->player.p_y / TILE_SIZE) * TILE_SIZE;
+    yintercept += ray->is_ray_facing_down ? TILE_SIZE : 0;
+
+    xintercept = mlx->player.p_x + (yintercept - mlx->player.p_y) / tan(ray->ray_angle);
+    ystep = TILE_SIZE;
+    ystep *= ray->is_ray_facing_up ? -1 : 1;
+
+    xstep = TILE_SIZE / tan(ray->ray_angle);
+    xstep *= (ray->is_ray_facing_left && xstep > 0) ? -1 : 1;
+    xstep *= (ray->is_ray_facing_right && xstep < 0) ? -1 : 1;
+}
+
+void draw_simple_rays(t_mlx *mlx)
+{
+    int i = 0;
+    int column = 0;
+    float x;
+    float y;
+    mlx->player.start_column_angle = mlx->player.rotation_angle - (mlx->player.fov / 2);
+    mlx->player.start_column_angle = normalize_angle(mlx->player.start_column_angle);
+    while(column < mlx->player.number_of_rays)
+    {
+        mlx->player.rays[column].ray_angle = mlx->player.start_column_angle;
+        ray(mlx, &mlx->player.rays[column]);
+        printf("is_ray_facing_right = %d\n", mlx->player.rays[column].is_ray_facing_right);
+        printf("mlx->player.rays[%d].ray_angle %f\n",column, mlx->player.rays[column].ray_angle);
+        i = 0;
+        while(i < 60)
+        {
+            x = mlx->player.p_x + i * cos(mlx->player.rays[column].ray_angle);
+            y = mlx->player.p_y + i * sin(mlx->player.rays[column].ray_angle);
+            if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && x < TD_MAP_SIZE)
+            {
+                my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00eeeee4);
+            }
+            i++;
+        }
+        mlx->player.start_column_angle += mlx->player.fov/mlx->player.number_of_rays;
+        mlx->player.start_column_angle = normalize_angle(mlx->player.start_column_angle);
+        column++;
+    }
 }
 
 void draw_line (t_mlx *mlx)
@@ -83,46 +177,22 @@ void draw_line (t_mlx *mlx)
     float x = 0;
     float y = 0;
     float angle = mlx->player.rotation_angle;
-    int j = 0;
-
+    
     printf("cos(angle) = %f\n",mlx->player.p_x + 50 * cos(angle));
     printf("sin(angle) = %f\n",mlx->player.p_y + 50 * sin(angle));
     printf("angle = %f\n", angle);
-    while(i < 30)
+    while(i < 60)
     {
         x = mlx->player.p_x + i * cos(angle);
         y = mlx->player.p_y + i * sin(angle);
-        if (x >= 0 && x < 1920 && y >= 0 && x < 1080)
+        if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && x < TD_MAP_SIZE)
         {
             my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00eeeee4);  
         }
         i++;
     }
-    float start_column = angle - (30 * (M_PI / 180));
-    float end_column = angle + (30 * (M_PI / 180));
-    printf("start_column = %f\n",start_column);
-    
-    x = 0;
-    y = 0;
-    while(j < 30)
-    {
-            x = mlx->player.p_x + j * (cos(start_column));
-            y = mlx->player.p_y + j * (sin(start_column));
-            my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00000000);
-            j++;
-    }
-    x = 0;
-    y = 0;
-    j = 0;
-    while(j < 30)
-    {
-            x = mlx->player.p_x + j * (cos(end_column));
-            y = mlx->player.p_y + j * (sin(end_column));
-            my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00000000);
-            j++;
-    }
+    draw_simple_rays(mlx);
 }
-
 void player_center_position(t_mlx *mlx, int x, int y)
 {
     mlx->player.p_x = x * TILE_SIZE + (TILE_SIZE / 2);

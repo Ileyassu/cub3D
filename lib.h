@@ -7,15 +7,31 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
-
+#include <stdbool.h>
+#include <limits.h>
+#include <float.h>
 
 #define TILE_SIZE 32
 #define MAP_WIDTH 7
 #define MAP_HEIGHT 7
-#define WINDOW_SIZE 7 * 32
-// #define M_PI 3.14159265358979323846
+#define TD_MAP_SIZE 7 * 32
 
 extern char *map[7];
+
+typedef struct s_ray 
+{
+    float ray_angle;
+    float wall_hit_x;
+    float wall_hit_y;
+    bool was_hit_vertical;
+    bool was_hit_horizontal;
+    float distance;
+    int is_ray_facing_up;
+    int is_ray_facing_down;
+    int is_ray_facing_right;
+    int is_ray_facing_left;
+    int wall_hit_content;
+} t_ray;
 
 typedef struct s_player
 {
@@ -28,7 +44,13 @@ typedef struct s_player
     float rotation_angle;
     float move_speed;
     float rotation_speed;
+    float fov;
+    float wall_strip_width;
+    int   number_of_rays;
+    float start_column_angle;
+    t_ray *rays;
 } t_player;
+
 typedef struct s_img 
 {
     void	*img;

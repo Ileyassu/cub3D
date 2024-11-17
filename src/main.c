@@ -12,7 +12,7 @@ void mlx_initializer(t_mlx *mlx)
 {
     mlx->mlx = mlx_init();
     mlx->win = mlx_new_window(mlx->mlx, 1920, 1080, "Cubix danger bcp");
-    mlx->img.img = mlx_new_image(mlx->mlx, WINDOW_SIZE, WINDOW_SIZE);
+    mlx->img.img = mlx_new_image(mlx->mlx, TD_MAP_SIZE, TD_MAP_SIZE);
     mlx->img.addr = mlx_get_data_addr(mlx->img.img, &mlx->img.bits_per_pixel
         ,&mlx->img.line_length, &mlx->img.endian);
 }
@@ -40,10 +40,10 @@ void draw_background (t_mlx *mlx)
     int i = 0;
     int j = 0;
 
-    while(i < (WINDOW_SIZE))
+    while(i < (TD_MAP_SIZE))
     {
         j = 0;
-        while(j < (WINDOW_SIZE))
+        while(j < (TD_MAP_SIZE))
         {
             my_mlx_pixel_put(&mlx->img, j, i, 0x000000ff);
             j++;
