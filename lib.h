@@ -20,17 +20,26 @@ extern char *map[7];
 
 typedef struct s_ray 
 {
+    int id;
     float ray_angle;
     float wall_hit_x;
     float wall_hit_y;
+    int foundHorzWallHit;
+    int foundVerticalHit;
     bool was_hit_vertical;
     bool was_hit_horizontal;
+    float vertical_distance;
     float distance;
+    float horizontal_distance;
     int is_ray_facing_up;
     int is_ray_facing_down;
     int is_ray_facing_right;
     int is_ray_facing_left;
     int wall_hit_content;
+    float next_vertical_touch_x;
+    float next_vertical_touch_y;
+    float next_horizontal_touch_x;
+    float next_horizontal_touch_y;
 } t_ray;
 
 typedef struct s_player
