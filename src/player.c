@@ -3,7 +3,7 @@
 float normalize_angle(float angle) {
     angle = remainder(angle, 2 * M_PI);
     if (angle < 0) {
-        angle = (2 * M_PI) + angle;
+        angle += (2 * M_PI);
     }
     return angle;
 }
@@ -115,37 +115,6 @@ void update_player(t_mlx *mlx)
     }
 }
 
-// void draw_simple_rays(t_mlx *mlx)
-// {
-//     int i = 0;
-//     int column = 0;
-//     float x;
-//     float y;
-//     mlx->player.start_column_angle = mlx->player.rotation_angle - (mlx->player.fov / 2);
-//     mlx->player.start_column_angle = normalize_angle(mlx->player.start_column_angle);
-//     while(column < mlx->player.number_of_rays)
-//     {
-//         mlx->player.rays[column].ray_angle = mlx->player.start_column_angle;
-//         ray(mlx, &mlx->player.rays[column]);
-//         printf("is_ray_facing_right = %d\n", mlx->player.rays[column].is_ray_facing_right);
-//         printf("mlx->player.rays[%d].ray_angle %f\n",column, mlx->player.rays[column].ray_angle);
-//         i = 0;
-//         while(i < 60)
-//         {
-//             x = mlx->player.p_x + i * cos(mlx->player.rays[column].ray_angle);
-//             y = mlx->player.p_y + i * sin(mlx->player.rays[column].ray_angle);
-//             if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && x < TD_MAP_SIZE)
-//             {
-//                 my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00eeeee4);
-//             }
-//             i++;
-//         }
-//         mlx->player.start_column_angle += mlx->player.fov/mlx->player.number_of_rays;
-//         mlx->player.start_column_angle = normalize_angle(mlx->player.start_column_angle);
-//         column++;
-//     }
-// }
-
 void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color)
 {
     float dx = x2 - x1;
@@ -173,7 +142,6 @@ void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color
 
 void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
 {
-    int i = 0;
     float xintercept;
     float yintercept;
     float xstep;
@@ -183,8 +151,6 @@ void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
     ray->next_vertical_touch_x = 0;
     ray->next_vertical_touch_y = 0;
     int found_vertical_wall_hit = false;
-    int wall_hit_x = 0;
-    int wall_hit_y = 0;
     xintercept = floor(mlx->player.p_x / TILE_SIZE) * TILE_SIZE;
     xintercept += ray->is_ray_facing_right ? TILE_SIZE : 0;
 
@@ -199,30 +165,23 @@ void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
 
     next_vertical_touch_x = xintercept;
     next_vertical_touch_y = yintercept;
-
-    if(ray->is_ray_facing_left)
-    {
-        next_vertical_touch_x--;
+    if (ray->is_ray_facing_left) {
+        next_vertical_touch_x = xintercept - EPSILON; // Move slightly left
     }
+
     while(next_vertical_touch_x >= 0 && next_vertical_touch_x <= TD_MAP_SIZE && next_vertical_touch_y >= 0 && next_vertical_touch_y <= TD_MAP_SIZE)
     {
-        float distance = sqrt(pow(next_vertical_touch_x - mlx->player.p_x, 2) + pow(next_vertical_touch_y - mlx->player.p_y, 2));
         if(map_has_wall_at(next_vertical_touch_x, next_vertical_touch_y))
         {
             found_vertical_wall_hit = 1;
-            wall_hit_x = next_vertical_touch_x;
-            ray->vertical_distance = distance;
-            wall_hit_y = next_vertical_touch_y;
             break;
         }
         else
         {
             // Increment 'i' based on the distance
-            i += (int)distance;
             next_vertical_touch_x += xstep;
             next_vertical_touch_y += ystep;
         }
-        i++;
     }
     ray->foundVerticalHit = found_vertical_wall_hit;
     if (found_vertical_wall_hit)
@@ -232,7 +191,6 @@ void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
     }
     else
         ray->vertical_distance = FLT_MAX;
-    // ray->foundVerticalHit = found_vertical_wall_hit;
     ray->next_vertical_touch_x = next_vertical_touch_x;
     ray->next_vertical_touch_y = next_vertical_touch_y;
 }
@@ -245,8 +203,6 @@ void horizontal_line_intersection(t_mlx *mlx, t_ray *ray)
     float next_horizontal_touch_x = 0;
     float next_horizontal_touch_y = 0;
     int found_horizontal_wall_hit = 0;
-    int wall_hit_x = 0;
-    int wall_hit_y = 0;
     yintercept = floor(mlx->player.p_y / TILE_SIZE) * TILE_SIZE;
     yintercept += ray->is_ray_facing_down ? TILE_SIZE : 0;
 
@@ -261,22 +217,19 @@ void horizontal_line_intersection(t_mlx *mlx, t_ray *ray)
     next_horizontal_touch_x = xintercept;
     next_horizontal_touch_y = yintercept;
 
-    if(ray->is_ray_facing_up)
-    {
-        next_horizontal_touch_y--;
+    if (ray->is_ray_facing_up) {
+        next_horizontal_touch_y = yintercept - EPSILON; // Move slightly up
     }
+
     while(next_horizontal_touch_x >= 0 && next_horizontal_touch_x <= TD_MAP_SIZE && next_horizontal_touch_y >= 0 && next_horizontal_touch_y <= TD_MAP_SIZE)
     {
         if(map_has_wall_at(next_horizontal_touch_x, next_horizontal_touch_y))
         {
             found_horizontal_wall_hit = 1;
-            wall_hit_x = next_horizontal_touch_x;
-            wall_hit_y = next_horizontal_touch_y;
             break;
         }
         else
         {
-            // Increment 'i' based on the distance
             next_horizontal_touch_x += xstep;
             next_horizontal_touch_y += ystep;
         }

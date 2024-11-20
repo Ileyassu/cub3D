@@ -14,8 +14,8 @@
 #define TILE_SIZE 32
 #define MAP_WIDTH 7
 #define MAP_HEIGHT 7
-#define TD_MAP_SIZE 7 * 32
-
+#define TD_MAP_SIZE 7 * TILE_SIZE
+#define EPSILON 0.0001
 extern char *map[7];
 
 typedef struct s_ray 
