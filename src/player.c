@@ -114,6 +114,55 @@ void update_player(t_mlx *mlx)
         mlx->player.p_y = old_y;
     }
 }
+void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color)
+{
+    if (start_y > end_y)
+        return;
+
+    for (int y = start_y; y < end_y; y++)
+    {
+        mlx_pixel_put(mlx->mlx, mlx->win, x, y, color);
+    }
+}
+void render_3D_projection_walls(t_mlx *mlx)
+{
+    int i = 0;
+    float wall_strip_width = WINDOW_WIDTH / mlx->player.number_of_rays;
+    while (i < mlx->player.number_of_rays)
+    {
+        t_ray ray = mlx->player.rays[i];
+        float ray_distance = ray.distance;
+        float distance_projection_plane = (WINDOW_WIDTH / 2) / tan(mlx->player.fov / 2);
+        float wall_strip_height = (TILE_SIZE / ray_distance) * distance_projection_plane;
+        
+        // Calculate wall positions
+        float wall_top_pixel = (WINDOW_HEIGHT / 2) - (wall_strip_height / 2);
+        float wall_bottom_pixel = (WINDOW_HEIGHT / 2) + (wall_strip_height / 2);
+        
+        // Ensure walls don't render outside window
+        if (wall_top_pixel < 0)
+            wall_top_pixel = 0;
+        if (wall_bottom_pixel > WINDOW_HEIGHT)
+            wall_bottom_pixel = WINDOW_HEIGHT;
+            
+        // Calculate x position for the wall strip
+        int x = i * wall_strip_width;
+        
+        // Draw ceiling (optional)
+        // draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue color
+        
+        // Draw wall strip
+        draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, 0x808080);  // Gray color
+        
+        // Draw floor (optional)
+        draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);  // Brown color
+        
+        i++;
+    }
+        printf("i = %d\n", i);  // Debugging output to check the loop iteration
+}
+
+// Helper function to draw vertical lines
 
 void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color)
 {

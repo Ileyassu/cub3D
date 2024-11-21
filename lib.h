@@ -14,6 +14,8 @@
 #define TILE_SIZE 32
 #define MAP_WIDTH 7
 #define MAP_HEIGHT 7
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1280
 #define TD_MAP_SIZE 7 * TILE_SIZE
 #define EPSILON 0.0001
 extern char *map[7];
@@ -68,6 +70,7 @@ typedef struct s_img
 	int		line_length;
 	int		endian;
 } t_img;
+
 typedef struct s_mlx 
 {
     void *mlx;
@@ -85,5 +88,7 @@ void draw_line (t_mlx *mlx);
 void update_player(t_mlx *mlx);
 int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y);
 void player_center_position(t_mlx *mlx, int x, int y);
+void render_3D_projection_walls(t_mlx *mlx);
+void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color);
 
 #endif
