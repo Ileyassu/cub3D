@@ -113,28 +113,29 @@ int key_press(int key_code, void *mlx_ptr)
     t_mlx *mlx;
 
         mlx = (t_mlx *)mlx_ptr;
-        if (key_code == 53)
+        if (key_code == 65307)
             exit(0);
-        else if (key_code == 13)
+        else if (key_code == 119)
         {
             mlx->player.walk_direction = 1;
             refreshing(mlx);
         }
-        else if(key_code == 1)
+        else if(key_code == 115)
         {
             mlx->player.walk_direction = -1;
             refreshing(mlx);
         }
-        else if(key_code == 0)
+        else if(key_code == 97)
         {
             mlx->player.turn_direction = 1;
             refreshing(mlx);
         }
-        else if(key_code == 2)
+        else if(key_code == 100)
         {
             mlx->player.turn_direction = -1;
             refreshing(mlx);
         }
+        printf("keypress = %d\n", key_code);
     return 0;
 }
 
@@ -143,24 +144,24 @@ int key_release(int key_code, void *mlx_ptr)
     t_mlx *mlx;
 
     mlx = (t_mlx *)mlx_ptr;
-    if (key_code == 53)
+    if (key_code == 65307)
         exit(0);
-    else if (key_code == 13)
+    else if (key_code == 119)
     {
         mlx->player.walk_direction = 0; 
         printf("keyPressed = w released\n");
     }
-    else if(key_code == 1)
+    else if(key_code == 115)
     {
         mlx->player.walk_direction = 0;
         printf("keyPressed = s released\n");
     }
-    else if(key_code == 0)
+    else if(key_code == 97)
     {
         mlx->player.turn_direction = 0;
         printf("keyPressed = a released\n");
     }
-    else if(key_code == 2)
+    else if(key_code == 100)
     {
         mlx->player.turn_direction = 0;
         printf("keyPressed = d released\n");
