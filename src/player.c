@@ -44,7 +44,7 @@ void init_player(t_mlx *mlx)
     mlx->player.walk_direction = 0;
     mlx->player.rotation_angle = M_PI/2;
     mlx->player.move_speed = 3.0;
-    mlx->player.rotation_speed = 10 * (M_PI / 180); //formula to get radius angle from degrees
+    mlx->player.rotation_speed = 5 * (M_PI / 180); //formula to get radius angle from degrees
     mlx->player.fov = 60 * (M_PI / 180);
     mlx->player.wall_strip_width = 1;
     mlx->player.number_of_rays = WINDOW_WIDTH/mlx->player.wall_strip_width;
@@ -129,41 +129,41 @@ void render_3D_projection_walls(t_mlx *mlx)
 {
     int i = 0;
     float wall_strip_width = WINDOW_WIDTH / mlx->player.number_of_rays;
+
     while (i < mlx->player.number_of_rays)
     {
         t_ray ray = mlx->player.rays[i];
-        float ray_distance = ray.distance;
+        // Correct the ray distance to remove the fish-eye effect
+        float distance = ray.distance * cos(ray.ray_angle - mlx->player.rotation_angle);
         float distance_projection_plane = (WINDOW_WIDTH / 2) / tan(mlx->player.fov / 2);
-        float wall_strip_height = (TILE_SIZE / ray_distance) * distance_projection_plane;
-        
+        float wall_strip_height = (TILE_SIZE / distance) * distance_projection_plane;
+
         // Calculate wall positions
         float wall_top_pixel = (WINDOW_HEIGHT / 2) - (wall_strip_height / 2);
         float wall_bottom_pixel = (WINDOW_HEIGHT / 2) + (wall_strip_height / 2);
-        
-        // Ensure walls don't render outside window
+
+        // Ensure walls don't render outside window bounds
         if (wall_top_pixel < 0)
             wall_top_pixel = 0;
         if (wall_bottom_pixel > WINDOW_HEIGHT)
             wall_bottom_pixel = WINDOW_HEIGHT;
-            
+
         // Calculate x position for the wall strip
         int x = i * wall_strip_width;
-        ray_distance = ray_distance * cos(ray.ray_angle);
-        
-        // Draw ceiling (optional)
-        draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue color
-        
+
+        // Draw ceiling
+        draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue
+
         // Draw wall strip
-        draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, 0x808080);  // Gray color
-        
-        // Draw floor (optional)
-        draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);  // Brown color
-        
-        printf("Ray %d: distance=%f, ray_angle=%f, rotation_angle=%f\n", i, ray.distance, ray.ray_angle, mlx->player.rotation_angle);
+        draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, 0x808080);  // Gray
+
+        // Draw floor
+        draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);  // Brown
+
         i++;
     }
-
 }
+
 
 // Helper function to draw vertical lines
 

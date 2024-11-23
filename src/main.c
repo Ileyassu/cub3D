@@ -131,12 +131,12 @@ int key_press(int key_code, void *mlx_ptr)
         }
         else if(key_code == 97)
         {
-            mlx->player.turn_direction = 1;
+            mlx->player.turn_direction = -1;
             refreshing(mlx);
         }
         else if(key_code == 100)
         {
-            mlx->player.turn_direction = -1;
+            mlx->player.turn_direction = 1;
             refreshing(mlx);
         }
         printf("keypress = %d\n", key_code);
@@ -172,6 +172,7 @@ int key_release(int key_code, void *mlx_ptr)
     }
     return 0;
 }
+
 int main()
 {
     t_mlx mlx;
