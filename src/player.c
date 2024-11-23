@@ -47,7 +47,7 @@ void init_player(t_mlx *mlx)
     mlx->player.rotation_speed = 10 * (M_PI / 180); //formula to get radius angle from degrees
     mlx->player.fov = 60 * (M_PI / 180);
     mlx->player.wall_strip_width = 1;
-    mlx->player.number_of_rays = TD_MAP_SIZE/mlx->player.wall_strip_width;
+    mlx->player.number_of_rays = WINDOW_WIDTH/mlx->player.wall_strip_width;
     mlx->player.rays = malloc(sizeof(t_ray) * mlx->player.number_of_rays);
     if (!mlx->player.rays)
         exit(1);
@@ -121,7 +121,8 @@ void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color)
 
     for (int y = start_y; y < end_y; y++)
     {
-        mlx_pixel_put(mlx->mlx, mlx->win, x, y, color);
+        //mlx_destroy_image(mlx->mlx, mlx->img.img);
+        my_mlx_pixel_put(&mlx->img, x, y, color);
     }
 }
 void render_3D_projection_walls(t_mlx *mlx)
@@ -147,9 +148,10 @@ void render_3D_projection_walls(t_mlx *mlx)
             
         // Calculate x position for the wall strip
         int x = i * wall_strip_width;
+        ray_distance = ray_distance * cos(ray.ray_angle);
         
         // Draw ceiling (optional)
-        // draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue color
+        draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue color
         
         // Draw wall strip
         draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, 0x808080);  // Gray color
@@ -157,9 +159,10 @@ void render_3D_projection_walls(t_mlx *mlx)
         // Draw floor (optional)
         draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);  // Brown color
         
+        printf("Ray %d: distance=%f, ray_angle=%f, rotation_angle=%f\n", i, ray.distance, ray.ray_angle, mlx->player.rotation_angle);
         i++;
     }
-        printf("i = %d\n", i);  // Debugging output to check the loop iteration
+
 }
 
 // Helper function to draw vertical lines
@@ -169,7 +172,8 @@ void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color
     float dx = x2 - x1;
     float dy = y2 - y1;
     float step;
-    
+    (void)mlx;
+    (void)color;
     step = fabs(dx) > fabs(dy) ? fabs(dx) : fabs(dy);
     
     float x_inc = dx / step;
@@ -180,10 +184,10 @@ void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color
     
     for (int i = 0; i <= step; i++)
     {
-        if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && y < TD_MAP_SIZE)
-        {
-            my_mlx_pixel_put(&mlx->img, (int)x, (int)y, color);
-        }
+        // if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && y < TD_MAP_SIZE)
+        // {
+        //     my_mlx_pixel_put(&mlx->img, (int)x, (int)y, color);
+        // }
         x += x_inc;
         y += y_inc;
     }
@@ -314,7 +318,7 @@ void cast (t_mlx *mlx, t_ray *ray)
         ray->distance = ray->vertical_distance;
         ray->was_hit_vertical = false;
     }
-    draw_ray_line(mlx, mlx->player.p_x, mlx->player.p_y, ray->wall_hit_x, ray->wall_hit_y, 0x00eeeee4);
+    //draw_ray_line(mlx, mlx->player.p_x, mlx->player.p_y, ray->wall_hit_x, ray->wall_hit_y, 0x00eeeee4);
 }
 void adjusting_rays(t_mlx *mlx)
 {
@@ -339,7 +343,7 @@ void draw_line (t_mlx *mlx)
     float x = 0;
     float y = 0;
     float angle = mlx->player.rotation_angle;
-    while(i < 60)
+    while(i < 30)
     {
         x = mlx->player.p_x + i * cos(angle);
         y = mlx->player.p_y + i * sin(angle);
@@ -359,7 +363,6 @@ void player_center_position(t_mlx *mlx, int x, int y)
 
 void draw_player(t_mlx *mlx)
 {
-    // my_mlx_pixel_put(&mlx->img, mlx->player.p_x, mlx->player.p_y, 0x0000ff00);
     int i = 0;
     int j = 0;
 
@@ -375,6 +378,10 @@ void draw_player(t_mlx *mlx)
         }
         i++;
     }
-    // draw_line(mlx);
+    draw_line(mlx);
+}
+void render_all(t_mlx *mlx)
+{
     adjusting_rays(mlx);
+    render_3D_projection_walls(mlx);
 }

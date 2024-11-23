@@ -22,7 +22,7 @@ $(NAME): $(OBJ)
 	@echo "$(NAME) compiled successfully."
 
 %.o: %.c
-	@$(CC) -Wall -Wextra -Werror -I/usr/include -Imlx_linux -O3 -Imlx -c $< -o $@
+	@$(CC) $(CFLAGS) -I/usr/include -Imlx_linux -O3 -Imlx -c $< -o $@
 
 fclean : clean
 	@echo full cleaning of $(NAME) ...

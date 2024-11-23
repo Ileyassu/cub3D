@@ -90,5 +90,5 @@ int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y);
 void player_center_position(t_mlx *mlx, int x, int y);
 void render_3D_projection_walls(t_mlx *mlx);
 void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color);
-
+void render_all(t_mlx *mlx);
 #endif

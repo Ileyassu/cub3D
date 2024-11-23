@@ -3,6 +3,8 @@
 void my_mlx_pixel_put(t_img *img, int x, int y, int color)
 {
     char *dst;
+    if(x < 0 || x > WINDOW_WIDTH || y < 0 || y > WINDOW_HEIGHT)
+        return;
     dst = img->addr + (y  * img->line_length + x * (img->bits_per_pixel / 8));
     *(unsigned int*)dst = color;
 }
@@ -11,7 +13,7 @@ void mlx_initializer(t_mlx *mlx)
 {
     mlx->mlx = mlx_init();
     mlx->win = mlx_new_window(mlx->mlx, WINDOW_WIDTH, WINDOW_HEIGHT, "Purgatory");
-    mlx->img.img = mlx_new_image(mlx->mlx, TD_MAP_SIZE, TD_MAP_SIZE);
+    mlx->img.img = mlx_new_image(mlx->mlx, WINDOW_WIDTH, WINDOW_HEIGHT);
     mlx->img.addr = mlx_get_data_addr(mlx->img.img, &mlx->img.bits_per_pixel
         ,&mlx->img.line_length, &mlx->img.endian);
 }
@@ -93,14 +95,16 @@ void draw_map(t_mlx *mlx)
 
 void draw_scene(t_mlx *mlx)
 {
+    render_all(mlx);
     draw_map(mlx);
     draw_player(mlx);
-    render_3D_projection_walls(mlx);
 }
 
 void refreshing(t_mlx *mlx)
 {
+    
     update_player (mlx);
+    printf("destroyed\n");
     mlx_clear_window(mlx->mlx, mlx->win);
     draw_scene(mlx);
     mlx_put_image_to_window(mlx->mlx, mlx->win, mlx->img.img, 0, 0);
