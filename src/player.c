@@ -122,17 +122,14 @@ int apply_shading(int base_color, float shading_factor)
     int b;
     int result;
 
-    // Extract the RGB components
     r = (base_color >> 16) & 0xFF;
     g = (base_color >> 8) & 0xFF;
     b = base_color & 0xFF;
 
-    // Apply shading factor to each color channel
     r = (int)(r * shading_factor);
     g = (int)(g * shading_factor);
     b = (int)(b * shading_factor);
 
-    // Clamp each color value to the range [0, 255]
     if (r > 255) r = 255;
     if (g > 255) g = 255;
     if (b > 255) b = 255;
@@ -140,7 +137,6 @@ int apply_shading(int base_color, float shading_factor)
     if (g < 0) g = 0;
     if (b < 0) b = 0;
 
-    // Combine the RGB components back into a single color
     result = (r << 16) | (g << 8) | b;
     return result;
 }
@@ -185,11 +181,19 @@ void render_3D_projection_walls(t_mlx *mlx)
 
         shading_factor = 1.0f / (1.0f + (distance * 0.01f));
         // Draw ceiling
-        int shaded_color = apply_shading(0x808080, shading_factor);
         draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue
 
         // Draw wall strip
-        draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, shaded_color);  // Gray
+        if (ray.was_hit_vertical)
+        {
+            int shaded_color = apply_shading(0x808080, shading_factor);
+            draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, shaded_color);  // Gray
+        }
+        else 
+        {
+            int shaded_color = apply_shading(0xFF0000, shading_factor);
+            draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, shaded_color);  // Gray
+        }
 
         // Draw floor
         draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);  // Brown

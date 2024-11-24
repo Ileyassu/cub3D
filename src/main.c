@@ -96,15 +96,14 @@ void draw_map(t_mlx *mlx)
 void draw_scene(t_mlx *mlx)
 {
     render_all(mlx);
-    draw_map(mlx);
-    draw_player(mlx);
+    // draw_map(mlx);
+    // draw_player(mlx);
 }
 
 void refreshing(t_mlx *mlx)
 {
     
     update_player (mlx);
-    printf("destroyed\n");
     mlx_clear_window(mlx->mlx, mlx->win);
     draw_scene(mlx);
     mlx_put_image_to_window(mlx->mlx, mlx->win, mlx->img.img, 0, 0);
@@ -118,7 +117,10 @@ int key_press(int key_code, void *mlx_ptr)
 
         mlx = (t_mlx *)mlx_ptr;
         if (key_code == 65307)
+        {
+            free(mlx->player.rays);
             exit(0);
+        }
         else if (key_code == 119)
         {
             mlx->player.walk_direction = 1;
