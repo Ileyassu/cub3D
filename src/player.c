@@ -55,8 +55,8 @@ void init_player(t_mlx *mlx)
     ray_init (mlx);
 }
 
-int map_has_wall_at(float x, float y) {
-    if (x < 0 || x > TD_MAP_SIZE|| y < 0 || y > TD_MAP_SIZE) {
+int map_has_wall_at(t_mlx *mlx, float x, float y) {
+    if (x < 0 || x > mlx->maps.td_map_size|| y < 0 || y > mlx->maps.td_map_size) {
         return 1;
     }
     int mapGridIndexX = floor(x / TILE_SIZE);
@@ -225,10 +225,6 @@ void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color
     
     for (int i = 0; i <= step; i++)
     {
-        // if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && y < TD_MAP_SIZE)
-        // {
-        //     my_mlx_pixel_put(&mlx->img, (int)x, (int)y, color);
-        // }
         x += x_inc;
         y += y_inc;
     }
@@ -264,9 +260,9 @@ void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
     next_vertical_touch_y = yintercept;
     if (ray->is_ray_facing_left)
         next_vertical_touch_x = xintercept - EPSILON;
-    while(next_vertical_touch_x >= 0 && next_vertical_touch_x <= TD_MAP_SIZE && next_vertical_touch_y >= 0 && next_vertical_touch_y <= TD_MAP_SIZE)
+    while(next_vertical_touch_x >= 0 && next_vertical_touch_x <= mlx->maps.td_map_size && next_vertical_touch_y >= 0 && next_vertical_touch_y <= mlx->maps.td_map_size)
     {
-        if(map_has_wall_at(next_vertical_touch_x, next_vertical_touch_y))
+        if(map_has_wall_at(mlx, next_vertical_touch_x, next_vertical_touch_y))
         {
             found_vertical_wall_hit = 1;
             break;
@@ -317,9 +313,9 @@ void horizontal_line_intersection(t_mlx *mlx, t_ray *ray)
 
     if (ray->is_ray_facing_up)
         next_horizontal_touch_y = yintercept - EPSILON; // Move slightly up
-    while(next_horizontal_touch_x >= 0 && next_horizontal_touch_x <= TD_MAP_SIZE && next_horizontal_touch_y >= 0 && next_horizontal_touch_y <= TD_MAP_SIZE)
+    while(next_horizontal_touch_x >= 0 && next_horizontal_touch_x <= mlx->maps.td_map_size && next_horizontal_touch_y >= 0 && next_horizontal_touch_y <= mlx->maps.td_map_size)
     {
-        if(map_has_wall_at(next_horizontal_touch_x, next_horizontal_touch_y))
+        if(map_has_wall_at(mlx, next_horizontal_touch_x, next_horizontal_touch_y))
         {
             found_horizontal_wall_hit = 1;
             break;
@@ -389,7 +385,7 @@ void draw_line (t_mlx *mlx)
     {
         x = mlx->player.p_x + i * cos(angle);
         y = mlx->player.p_y + i * sin(angle);
-        if (x >= 0 && x < TD_MAP_SIZE && y >= 0 && x < TD_MAP_SIZE)
+        if (x >= 0 && x < mlx->maps.td_map_size && y >= 0 && x < mlx->maps.td_map_size)
         {
             my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00eeeee4);  
         }

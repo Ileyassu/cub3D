@@ -12,13 +12,10 @@
 #include <float.h>
 
 #define TILE_SIZE 32
-#define MAP_WIDTH 7
-#define MAP_HEIGHT 7
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1280
-#define TD_MAP_SIZE 7 * TILE_SIZE
 #define EPSILON 0.0001
-extern char *map[7];
+extern char *map[16];
 
 typedef struct s_ray 
 {
@@ -71,14 +68,31 @@ typedef struct s_img
 	int		endian;
 } t_img;
 
+typedef struct s_map
+{
+    // char    *no_texture;
+    // char    *so_texture;
+    // char    *we_texture;
+    // char    *ea_texture;
+    // char    *floor_color;
+    // char   *ceiling_color;
+    // char	**map;
+    // struct s_player player;
+    // struct s_rgb    floor_rgb;
+    // struct s_rgb    ceiling_rgb;
+    int     td_map_size;
+    int     width;
+    int     height;
+} t_map;
+
 typedef struct s_mlx 
 {
     void *mlx;
     void *win;
     t_img img;
     t_player player;
+    t_map maps;
 } t_mlx  ;
-
 
 void player_position(t_mlx *mlx);
 void init_player(t_mlx *mlx);
@@ -91,4 +105,5 @@ void player_center_position(t_mlx *mlx, int x, int y);
 void render_3D_projection_walls(t_mlx *mlx);
 void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color);
 void render_all(t_mlx *mlx);
+
 #endif

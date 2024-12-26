@@ -9,8 +9,9 @@ void my_mlx_pixel_put(t_img *img, int x, int y, int color)
     *(unsigned int*)dst = color;
 }
 
-void mlx_initializer(t_mlx *mlx)
+void mlx_initializer(t_mlx *mlx, t_map *maps)
 {
+    mlx->maps = *maps;
     mlx->mlx = mlx_init();
     mlx->win = mlx_new_window(mlx->mlx, WINDOW_WIDTH, WINDOW_HEIGHT, "Purgatory");
     mlx->img.img = mlx_new_image(mlx->mlx, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -41,10 +42,10 @@ void draw_background (t_mlx *mlx)
     int i = 0;
     int j = 0;
 
-    while(i < (TD_MAP_SIZE))
+    while(i < (mlx->maps.td_map_size))
     {
         j = 0;
-        while(j < (TD_MAP_SIZE))
+        while(j < (mlx->maps.td_map_size))
         {
             my_mlx_pixel_put(&mlx->img, j, i, 0x000000ff);
             j++;
@@ -53,12 +54,38 @@ void draw_background (t_mlx *mlx)
     }
 }
 
+void map_calculator(t_map *maps)
+{
+    maps->height = 0;
+    maps->width = 0;
+    int j = 0;
+    int biggest_len = 0;
+    while(map[maps->height])
+    {
+        j = 0;
+        while(map[maps->height][j])
+        {
+            j++;
+        }
+        if (j > biggest_len)
+        {
+            biggest_len = j;
+        }
+        maps->height++;
+    }
+    maps->width = biggest_len;
+    maps->td_map_size = (maps->width * TILE_SIZE);
+    printf("map size = %d\n", maps->width);
+
+}
+
+
 void player_position(t_mlx *mlx)
 {
     int i = 0;
     int j = 0;
-
-    while(i < MAP_HEIGHT)
+    
+    while(i < mlx->maps.height)
     {
         j = 0;
         while (map[i][j])
@@ -80,7 +107,7 @@ void draw_map(t_mlx *mlx)
     int j = 0;
 
     draw_background(mlx);
-    while(i < MAP_HEIGHT)
+    while(i < mlx->maps.height)
     {
         j = 0;
         while(map[i][j])
@@ -178,11 +205,14 @@ int key_release(int key_code, void *mlx_ptr)
 int main()
 {
     t_mlx mlx;
+    t_map maps;
+    map_calculator(&maps);
+    mlx_initializer(&mlx, &maps);
     init_player(&mlx);
-    mlx_initializer(&mlx);
+    printf("map size = %d\n", maps.td_map_size);
     draw_scene(&mlx);
     mlx_put_image_to_window(mlx.mlx, mlx.win, mlx.img.img, 0, 0);
     mlx_hook(mlx.win, 02, 1L<<0, key_press, &mlx);
     mlx_hook(mlx.win, 3, 1L<<1, key_release, &mlx);
     mlx_loop(mlx.mlx);
-} 
+}
