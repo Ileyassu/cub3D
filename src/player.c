@@ -56,7 +56,7 @@ void init_player(t_mlx *mlx)
 }
 
 int map_has_wall_at(t_mlx *mlx, float x, float y) {
-    if (x < 0 || x > mlx->maps.td_map_size|| y < 0 || y > mlx->maps.td_map_size) {
+    if (x < 0 || x >= mlx->maps.width * TILE_SIZE || y < 0 || y >= mlx->maps.height * TILE_SIZE) {
         return 1;
     }
     int mapGridIndexX = floor(x / TILE_SIZE);
@@ -260,7 +260,10 @@ void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
     next_vertical_touch_y = yintercept;
     if (ray->is_ray_facing_left)
         next_vertical_touch_x = xintercept - EPSILON;
-    while(next_vertical_touch_x >= 0 && next_vertical_touch_x <= mlx->maps.td_map_size && next_vertical_touch_y >= 0 && next_vertical_touch_y <= mlx->maps.td_map_size)
+    while(next_vertical_touch_x >= 0 && 
+       next_vertical_touch_x <= mlx->maps.width * TILE_SIZE && 
+       next_vertical_touch_y >= 0 && 
+       next_vertical_touch_y <= mlx->maps.height * TILE_SIZE)
     {
         if(map_has_wall_at(mlx, next_vertical_touch_x, next_vertical_touch_y))
         {
@@ -313,7 +316,10 @@ void horizontal_line_intersection(t_mlx *mlx, t_ray *ray)
 
     if (ray->is_ray_facing_up)
         next_horizontal_touch_y = yintercept - EPSILON; // Move slightly up
-    while(next_horizontal_touch_x >= 0 && next_horizontal_touch_x <= mlx->maps.td_map_size && next_horizontal_touch_y >= 0 && next_horizontal_touch_y <= mlx->maps.td_map_size)
+    while(next_horizontal_touch_x >= 0 && 
+       next_horizontal_touch_x <= mlx->maps.width * TILE_SIZE && 
+       next_horizontal_touch_y >= 0 && 
+       next_horizontal_touch_y <= mlx->maps.height * TILE_SIZE)
     {
         if(map_has_wall_at(mlx, next_horizontal_touch_x, next_horizontal_touch_y))
         {

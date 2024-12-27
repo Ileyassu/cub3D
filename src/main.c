@@ -58,11 +58,12 @@ void map_calculator(t_map *maps)
 {
     maps->height = 0;
     maps->width = 0;
-    int j = 0;
     int biggest_len = 0;
-    while(map[maps->height])
+    
+    // Count rows and find longest row
+    while(map[maps->height] != NULL && map[maps->height][0] != '\0')
     {
-        j = 0;
+        int j = 0;
         while(map[maps->height][j])
         {
             j++;
@@ -73,10 +74,9 @@ void map_calculator(t_map *maps)
         }
         maps->height++;
     }
+    
     maps->width = biggest_len;
     maps->td_map_size = (maps->width * TILE_SIZE);
-    printf("map size = %d\n", maps->width);
-
 }
 
 

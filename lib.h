@@ -12,10 +12,10 @@
 #include <float.h>
 
 #define TILE_SIZE 32
-#define WINDOW_WIDTH 1920
-#define WINDOW_HEIGHT 1280
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 800
 #define EPSILON 0.0001
-extern char *map[16];
+extern char map[18][67];
 
 typedef struct s_ray 
 {
