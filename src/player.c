@@ -57,11 +57,18 @@ void init_player(t_mlx *mlx)
 
 int map_has_wall_at(t_mlx *mlx, float x, float y) {
     if (x < 0 || x >= mlx->maps.width * TILE_SIZE || y < 0 || y >= mlx->maps.height * TILE_SIZE) {
-        return 1;
+        return 1; // Outside bounds, treat as a wall
     }
     int mapGridIndexX = floor(x / TILE_SIZE);
     int mapGridIndexY = floor(y / TILE_SIZE);
-    return map[mapGridIndexY][mapGridIndexX] == '1';
+    
+    // Ensure indices are within the bounds of the map array
+    if ((mapGridIndexY < 0 || mapGridIndexY >= mlx->maps.height) || 
+        (mapGridIndexX < 0 || mapGridIndexX >= mlx->maps.width)) {
+        return 1; // Treat as a wall if out of bounds
+    }
+    
+    return mlx->maps.map[mapGridIndexY][mapGridIndexX] == '1'; // Check bounds here
 }
 
 int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y)
@@ -70,8 +77,8 @@ int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y)
     int bottom_y = y + (mlx->player.size/2);
     int converting_x_to_grid = floor(right_x / TILE_SIZE);
     int converting_y_to_grid = floor(bottom_y / TILE_SIZE);
-
-    if(map[converting_y_to_grid][converting_x_to_grid] == '1')
+    
+    if(mlx->maps.map[converting_y_to_grid][converting_x_to_grid] == '1')
     {
         printf("oups !! you're hitting a wall\n");
         return (1);
@@ -86,7 +93,7 @@ int does_hit_left_top_wall(t_mlx *mlx, int x, int y)
     int converting_x_to_grid = floor(left_x / TILE_SIZE);
     int converting_y_to_grid = floor(top_y / TILE_SIZE);
 
-    if(map[converting_y_to_grid][converting_x_to_grid] == '1')
+    if(mlx->maps.map[converting_y_to_grid][converting_x_to_grid] == '1')
     {
         return (1);
     }
@@ -316,6 +323,9 @@ void horizontal_line_intersection(t_mlx *mlx, t_ray *ray)
 
     if (ray->is_ray_facing_up)
         next_horizontal_touch_y = yintercept - EPSILON; // Move slightly up
+    // printf("ray angle = %f\n", ray->ray_angle);
+    // printf("next horizontal touch = %f\n", next_horizontal_touch_x);
+    // printf("map width => %d\n",mlx->maps.width);
     while(next_horizontal_touch_x >= 0 && 
        next_horizontal_touch_x <= mlx->maps.width * TILE_SIZE && 
        next_horizontal_touch_y >= 0 && 
