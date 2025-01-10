@@ -254,7 +254,7 @@ void free_textures(t_map *map, t_mlx mlx)
     if (map->ea_texture)
         mlx_destroy_image(mlx.mlx, map->ea_texture);
 }
-
+//N,S,E or W
 void player_position(t_mlx *mlx)
 {
     int i = 0;
@@ -264,8 +264,10 @@ void player_position(t_mlx *mlx)
         j = 0;
         while (mlx->maps.map[i][j])
         {
-            if(mlx->maps.map[i][j] == 'N')
+            if(mlx->maps.map[i][j] == 'N' || mlx->maps.map[i][j] == 'S' || 
+                mlx->maps.map[i][j] == 'E' || mlx->maps.map[i][j] == 'W')
             {
+                mlx->player.starting_postition_in_map = mlx->maps.map[i][j];
                 player_center_position(mlx, j, i);
                 break;
             }
@@ -316,36 +318,46 @@ void refreshing(t_mlx *mlx)
 int key_press(int key_code, void *mlx_ptr)
 {
     t_mlx *mlx;
+    mlx = (t_mlx *)mlx_ptr;
 
-        mlx = (t_mlx *)mlx_ptr;
-        if (key_code == 65307)
-        {
-            free(mlx->player.rays);
-            mlx_destroy_window(mlx, mlx->win);
-            free_textures(&mlx->maps, *mlx);
-            exit(0);
-        }
-        else if (key_code == 119)
-        {
-            mlx->player.walk_direction = 1;
-            refreshing(mlx);
-        }
-        else if(key_code == 115)
-        {
-            mlx->player.walk_direction = -1;
-            refreshing(mlx);
-        }
-        else if(key_code == 97)
-        {
-            mlx->player.turn_direction = -1;
-            refreshing(mlx);
-        }
-        else if(key_code == 100)
-        {
-            mlx->player.turn_direction = 1;
-            refreshing(mlx);
-        }
-        printf("keypress = %d\n", key_code);
+    if (key_code == 65307)  // ESC key
+    {
+        free(mlx->player.rays);
+        mlx_destroy_window(mlx, mlx->win);
+        free_textures(&mlx->maps, *mlx);
+        exit(0);
+    }
+    else if (key_code == 65361)  // Left arrow - rotate left
+    {
+        mlx->player.turn_direction = -1;
+        refreshing(mlx);
+    }
+    else if (key_code == 65363)  // Right arrow - rotate right
+    {
+        mlx->player.turn_direction = 1;
+        refreshing(mlx);
+    }
+    else if (key_code == 119 || key_code == 65362)  // W key or Up arrow - move forward
+    {
+        mlx->player.walk_direction = 1;
+        refreshing(mlx);
+    }
+    else if (key_code == 115 || key_code == 65364)  // S key or Down arrow - move backward
+    {
+        mlx->player.walk_direction = -1;
+        refreshing(mlx);
+    }
+    else if (key_code == 97)  // A key - strafe left
+    {
+        mlx->player.strafe_direction = -1;
+        refreshing(mlx);
+    }
+    else if (key_code == 100)  // D key - strafe right
+    {
+        mlx->player.strafe_direction = 1;
+        refreshing(mlx);
+    }
+    printf("keypress = %d\n", key_code);
     return 0;
 }
 

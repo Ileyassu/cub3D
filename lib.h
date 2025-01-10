@@ -29,8 +29,6 @@
 #define SOUTH_WALL_COLOR 0x00CC00
 #define EAST_WALL_COLOR  0x0000CC
 #define WEST_WALL_COLOR  0xCCCC00
-// extern char *map[7];
-
 
 typedef struct s_pos 
 {
@@ -93,6 +91,7 @@ typedef struct s_ray
 
 typedef struct s_player
 {
+    char starting_postition_in_map;
     float p_x;
     float p_y;
     float size;
@@ -100,6 +99,7 @@ typedef struct s_player
     float radius;
     float turn_direction;
     float walk_direction;
+    float strafe_direction;
     float rotation_angle;
     float move_speed;
     float rotation_speed;

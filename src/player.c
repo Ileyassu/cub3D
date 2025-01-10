@@ -35,16 +35,31 @@ void ray_init (t_mlx *mlx)
     }
 }
 
+void set_starting_direction(t_mlx *mlx)
+{
+    char direction = mlx->player.starting_postition_in_map;
+    
+    if (direction == 'N')
+        mlx->player.rotation_angle = 3 * M_PI / 2;    // 270 degrees (facing up)
+    else if (direction == 'S')
+        mlx->player.rotation_angle = M_PI / 2;        // 90 degrees (facing down)
+    else if (direction == 'E')
+        mlx->player.rotation_angle = 0;               // 0 degrees (facing right)
+    else if (direction == 'W')
+        mlx->player.rotation_angle = M_PI;            // 180 degrees (facing left)
+}
+
 void init_player(t_mlx *mlx)
 {
     player_position(mlx);
+    mlx->player.strafe_direction = 0;
     mlx->player.size = 4;
     mlx->player.radius = 3;
     mlx->player.turn_direction = 0;
     mlx->player.walk_direction = 0;
-    mlx->player.rotation_angle = M_PI/2;
+    set_starting_direction(mlx);  // Set the initial rotation based on map character
     mlx->player.move_speed = 10.0;
-    mlx->player.rotation_speed = 2 * (M_PI / 180); //formula to get radius angle from degrees
+    mlx->player.rotation_speed = 2 * (M_PI / 180);
     mlx->player.fov = 60 * (M_PI / 180);
     mlx->player.wall_strip_width = 1;
     mlx->player.number_of_rays = WINDOW_WIDTH/mlx->player.wall_strip_width;
@@ -52,8 +67,9 @@ void init_player(t_mlx *mlx)
     if (!mlx->player.rays)
         exit(1);
     mlx->player.start_column_angle = 0;
-    ray_init (mlx);
+    ray_init(mlx);
 }
+
 
 // int map_has_wall_at(t_mlx *mlx, float x, float y) {
 //     if (x < 0 || x >= mlx->maps.width * TILE_SIZE || y < 0 || y >= mlx->maps.height * TILE_SIZE) {
@@ -105,22 +121,40 @@ void update_player(t_mlx *mlx)
     int old_x = mlx->player.p_x;
     int old_y = mlx->player.p_y;
     float move_step = 0;
+    float strafe_step = 0;
     float tmp_walk_direction = mlx->player.walk_direction;
+    float tmp_strafe_direction = mlx->player.strafe_direction;
     float tmp_turn_direction = mlx->player.turn_direction;
+
+    // Reset movement flags
     mlx->player.turn_direction = 0;
     mlx->player.walk_direction = 0;
-    // Accumulate the rotation angle over time
+    mlx->player.strafe_direction = 0;
+
+    // Update rotation
     mlx->player.rotation_angle += tmp_turn_direction * mlx->player.rotation_speed;
+
+    // Calculate forward/backward movement
     move_step = tmp_walk_direction * mlx->player.move_speed;
-    mlx->player.p_x += cos(mlx->player.rotation_angle) * move_step;
-    mlx->player.p_y += sin(mlx->player.rotation_angle) * move_step;
-    if(does_hit_right_Bottom_wall(mlx ,mlx->player.p_x, mlx->player.p_y) || 
-        does_hit_left_top_wall(mlx, mlx->player.p_x, mlx->player.p_y))
+    
+    // Calculate strafe movement
+    strafe_step = tmp_strafe_direction * mlx->player.move_speed;
+
+    // Update position with both forward/backward and strafe movement
+    mlx->player.p_x += cos(mlx->player.rotation_angle) * move_step +
+                       cos(mlx->player.rotation_angle + M_PI/2) * strafe_step;
+    mlx->player.p_y += sin(mlx->player.rotation_angle) * move_step +
+                       sin(mlx->player.rotation_angle + M_PI/2) * strafe_step;
+
+    // Wall collision check
+    if(does_hit_right_Bottom_wall(mlx, mlx->player.p_x, mlx->player.p_y) || 
+       does_hit_left_top_wall(mlx, mlx->player.p_x, mlx->player.p_y))
     {
         mlx->player.p_x = old_x;
         mlx->player.p_y = old_y;
     }
 }
+
 
 int apply_shading(int base_color, float shading_factor)
 {
