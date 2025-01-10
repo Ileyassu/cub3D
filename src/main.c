@@ -1,5 +1,93 @@
 #include "../lib.h"
 
+void cleanup_textures(t_mlx *mlx)
+{
+    // Free texture data
+    for (int i = 0; i < 4; i++) {
+        if (mlx->tex[i].texture) {
+            free(mlx->tex[i].texture);
+            mlx->tex[i].texture = NULL;
+        }
+    }
+}
+
+// void cleanup_map(t_map *map)
+// {
+//     if (!map)
+//         return;
+        
+//     // Free texture paths
+//     if (map->no_texture)
+//         free(map->no_texture);
+//     if (map->so_texture)
+//         free(map->so_texture);
+//     if (map->we_texture)
+//         free(map->we_texture);
+//     if (map->ea_texture)
+//         free(map->ea_texture);
+    
+//     // Free colors
+//     if (map->floor_color)
+//         free(map->floor_color);
+//     if (map->ceiling_color)
+//         free(map->ceiling_color);
+    
+//     // Free the map array
+//     if (map->map) {
+//         for (int i = 0; i < map->height; i++) {
+//             if (map->map[i])
+//                 free(map->map[i]);
+//         }
+//         free(map->map);
+//     }
+// }
+
+// void cleanup_mlx(t_mlx *mlx)
+// {
+//     if (!mlx || !mlx->mlx)
+//         return;
+
+//     // Free ray array
+//     if (mlx->player.rays) {
+//         free(mlx->player.rays);
+//         mlx->player.rays = NULL;
+//     }
+
+//     // Destroy the image if it exists
+//     if (mlx->img.img) {
+//         mlx_destroy_image(mlx->mlx, mlx->img.img);
+//         mlx->img.img = NULL;
+//     }
+
+//     // Destroy the window if it exists
+//     if (mlx->win) {
+//         mlx_destroy_window(mlx->mlx, mlx->win);
+//         mlx->win = NULL;
+//     }
+
+//     // Free MLX itself
+//     if (mlx->mlx) {
+//         mlx_destroy_display(mlx->mlx);
+//         free(mlx->mlx);
+//         mlx->mlx = NULL;
+//     }
+// }
+
+// // Function to handle exit
+// int handle_exit(t_mlx *mlx)
+// {
+//     // Clean up in the correct order
+//     cleanup_textures(mlx);
+//     cleanup_mlx(mlx);
+//     cleanup_map(&mlx->maps);
+//     exit(0);
+//     return (0);
+// }
+
+void free_rays(t_mlx *mlx)
+{
+    free(mlx->player.rays);
+}
 void my_mlx_pixel_put(t_img *img, int x, int y, int color)
 {
     char *dst;
@@ -94,6 +182,79 @@ void draw_background (t_mlx *mlx)
     }
 }
 
+void load_texture(t_mlx *mlx)
+{
+    t_img img;
+    const char *texture_paths[4] = {
+        mlx->maps.ea_texture,
+        mlx->maps.no_texture,
+        mlx->maps.so_texture,
+        mlx->maps.we_texture
+    };
+
+    for (int i = 0; i < 4; i++) {
+        // Load image
+        img.img = mlx_xpm_file_to_image(mlx->mlx, (char*)texture_paths[i], 
+                                       &img.img_width, &img.img_height);
+        if (!img.img) {
+            printf("Failed to load texture: %s\n", texture_paths[i]);
+            exit(1);
+        }
+
+        // Verify texture dimensions
+        if (img.img_width != 64 || img.img_height != 64) {
+            printf("Warning: Texture %s is not 64x64 (%dx%d)\n", 
+                   texture_paths[i], img.img_width, img.img_height);
+            exit(1);
+        }
+
+        // Store dimensions (force 64x64)
+        mlx->tex[i].width = 64;
+        mlx->tex[i].height = 64;
+
+        // Get image data
+        img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, 
+                                    &img.line_length, &img.endian);
+
+        // Allocate texture buffer
+        mlx->tex[i].texture = (uint32_t *)malloc(sizeof(uint32_t) * 64 * 64);
+        if (!mlx->tex[i].texture) {
+            printf("Failed to allocate memory for texture %d\n", i);
+            exit(1);
+        }
+
+        // Copy and scale texture data to 64x64
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                // Scale coordinates to original texture size
+                int src_x = x * img.img_width / 64;
+                int src_y = y * img.img_height / 64;
+                
+                unsigned int *ptr = (unsigned int*)(img.addr + 
+                                  (src_y * img.line_length + src_x * (img.bits_per_pixel / 8)));
+                mlx->tex[i].texture[y * 64 + x] = *ptr;
+            }
+        }
+
+        mlx_destroy_image(mlx->mlx, img.img);
+        if (texture_paths[i]) {
+            free((void*)texture_paths[i]);
+        }
+    }
+}
+
+void free_textures(t_map *map, t_mlx mlx)
+{
+    if (map->no_texture)
+        mlx_destroy_image(mlx.mlx, map->no_texture);
+    if (map->so_texture)
+        mlx_destroy_image(mlx.mlx, map->so_texture);
+    if (map->we_texture)
+        mlx_destroy_image(mlx.mlx, map->we_texture);
+    if (map->ea_texture)
+        mlx_destroy_image(mlx.mlx, map->ea_texture);
+}
+
 void player_position(t_mlx *mlx)
 {
     int i = 0;
@@ -103,10 +264,8 @@ void player_position(t_mlx *mlx)
         j = 0;
         while (mlx->maps.map[i][j])
         {
-            printf("stetetet\n");
             if(mlx->maps.map[i][j] == 'N')
             {
-                printf("i = %d ---- j = %d\n", i,j);
                 player_center_position(mlx, j, i);
                 break;
             }
@@ -162,6 +321,8 @@ int key_press(int key_code, void *mlx_ptr)
         if (key_code == 65307)
         {
             free(mlx->player.rays);
+            mlx_destroy_window(mlx, mlx->win);
+            free_textures(&mlx->maps, *mlx);
             exit(0);
         }
         else if (key_code == 119)
@@ -239,14 +400,12 @@ int main(int ac, char **av)
     (void)ac;
     t_map maps;
     t_mlx mlx;
-    char **new_map; //free this mora manssaliw
     start_parsing(av[1], &maps);
+    printmap(maps.map, maps.height);
     mlx_initializer(&mlx);
-    new_map = map_calculator(&maps);
-    free2d(maps.map);
-    maps.map = new_map;
-    // printmap(new_map, maps.height);
     mlx.maps = maps;
+    printf("Loading texture: %s\n", mlx.maps.ea_texture);
+    load_texture(&mlx);
     init_player(&mlx);
     draw_scene(&mlx);
     mlx_put_image_to_window(mlx.mlx, mlx.win, mlx.img.img, 0, 0);

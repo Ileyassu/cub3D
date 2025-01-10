@@ -43,7 +43,7 @@ void init_player(t_mlx *mlx)
     mlx->player.turn_direction = 0;
     mlx->player.walk_direction = 0;
     mlx->player.rotation_angle = M_PI/2;
-    mlx->player.move_speed = 3.0;
+    mlx->player.move_speed = 10.0;
     mlx->player.rotation_speed = 2 * (M_PI / 180); //formula to get radius angle from degrees
     mlx->player.fov = 60 * (M_PI / 180);
     mlx->player.wall_strip_width = 1;
@@ -55,21 +55,21 @@ void init_player(t_mlx *mlx)
     ray_init (mlx);
 }
 
-int map_has_wall_at(t_mlx *mlx, float x, float y) {
-    if (x < 0 || x >= mlx->maps.width * TILE_SIZE || y < 0 || y >= mlx->maps.height * TILE_SIZE) {
-        return 1; // Outside bounds, treat as a wall
-    }
-    int mapGridIndexX = floor(x / TILE_SIZE);
-    int mapGridIndexY = floor(y / TILE_SIZE);
+// int map_has_wall_at(t_mlx *mlx, float x, float y) {
+//     if (x < 0 || x >= mlx->maps.width * TILE_SIZE || y < 0 || y >= mlx->maps.height * TILE_SIZE) {
+//         return 1; // Outside bounds, treat as a wall
+//     }
+//     int mapGridIndexX = floor(x / TILE_SIZE);
+//     int mapGridIndexY = floor(y / TILE_SIZE);
     
-    // Ensure indices are within the bounds of the map array
-    if ((mapGridIndexY < 0 || mapGridIndexY >= mlx->maps.height) || 
-        (mapGridIndexX < 0 || mapGridIndexX >= mlx->maps.width)) {
-        return 1; // Treat as a wall if out of bounds
-    }
+//     // Ensure indices are within the bounds of the map array
+//     if ((mapGridIndexY < 0 || mapGridIndexY >= mlx->maps.height) || 
+//         (mapGridIndexX < 0 || mapGridIndexX >= mlx->maps.width)) {
+//         return 1; // Treat as a wall if out of bounds
+//     }
     
-    return mlx->maps.map[mapGridIndexY][mapGridIndexX] == '1'; // Check bounds here
-}
+//     return mlx->maps.map[mapGridIndexY][mapGridIndexX] == '1'; // Check bounds here
+// }
 
 int does_hit_right_Bottom_wall(t_mlx *mlx, int x, int y)
 {
@@ -148,7 +148,30 @@ int apply_shading(int base_color, float shading_factor)
     return result;
 }
 
-void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color)
+uint32_t get_wall_color(t_ray ray)
+{
+    switch(ray.wall_face) {
+        case NORTH_FACE:
+            return 0xCC0000;  // Darker red for north-facing walls
+        case SOUTH_FACE:
+            return 0x00CC00;  // Darker green for south-facing walls
+        case EAST_FACE:
+            return 0x0000CC;  // Darker blue for east-facing walls
+        case WEST_FACE:
+            return 0xCCCC00;  // Darker yellow for west-facing walls
+        default:
+            return 0xFFFFFF;  // White for undefined faces
+    }
+}
+
+void clearColorBuffer(t_mlx *mlx, uint32_t color) {
+    for (int x = 0; x < WINDOW_WIDTH; x++)
+        for (int y = 0; y < WINDOW_HEIGHT; y++)
+            ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + x] = color;
+}
+
+
+void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color) // return to this function after finishing
 {
     if (start_y > end_y)
         return;
@@ -159,221 +182,211 @@ void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color)
         my_mlx_pixel_put(&mlx->img, x, y, color);
     }
 }
+
+void cpy_pixel(t_img *src, t_img *dst, int src_x, int src_y, int dst_x, int dst_y)
+{
+    char *dst_px;
+    char *src_px;
+
+    // if(x < 0 || x > WINDOW_WIDTH || y < 0 || y > WINDOW_HEIGHT)
+    //     return;
+    dst_px = dst->addr + (dst_y * dst->line_length + dst_x * (dst->bits_per_pixel / 8));\
+    src_px = src->addr + (src_y * src->line_length + src_x * (src->bits_per_pixel / 8));
+    *(unsigned int*)dst_px = *(unsigned int *)src_px;
+}
+
+
+int get_pixel_color(t_tex *tex, int x, int y)
+{
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x >= tex->width) x = tex->width - 1;
+    if (y >= tex->height) y = tex->height - 1;
+    
+    int index = (int)(y * tex->width + x);
+    if (index < 0 || index >= (tex->width * tex->height))
+        return 0;  // Return black or another default color if out of bounds
+        
+    return tex->texture[index];
+}
+
+void renderColorBuffer(t_mlx *mlx) {
+    mlx_put_image_to_window(mlx->mlx, mlx->win, mlx->img.img, 0, 0);
+}
+
+float calculate_perp_distance(t_ray *ray, float player_angle)
+{
+    float perp_distance = ray->distance * cos(ray->ray_angle - player_angle);
+    return perp_distance > 0.001f ? perp_distance : 0.001f;
+}
+
 void render_3D_projection_walls(t_mlx *mlx)
 {
-    int i = 0;
-    float wall_strip_width = WINDOW_WIDTH / mlx->player.number_of_rays;
-
-    while (i < mlx->player.number_of_rays)
+    for (int i = 0; i < mlx->player.number_of_rays; i++) 
     {
-        t_ray ray = mlx->player.rays[i];
-        // Correct the ray distance to remove the fish-eye effect
-        float distance = ray.distance * cos(ray.ray_angle - mlx->player.rotation_angle);
-        float distance_projection_plane = (WINDOW_WIDTH / 2) / tan(mlx->player.fov / 2);
-        float wall_strip_height = (TILE_SIZE / distance) * distance_projection_plane;
+        t_ray *ray = &mlx->player.rays[i];
+        
+        // Calculate the perpendicular distance to avoid fisheye effect
+        float perpDistance = calculate_perp_distance(ray, mlx->player.rotation_angle);
+        
+        // Calculate projected wall height
+        float distanceProjPlane = (WINDOW_WIDTH / 2.0f) / tan(mlx->player.fov / 2.0f);
+        float projectedWallHeight = (TILE_SIZE / perpDistance) * distanceProjPlane;
+        
+        // Calculate wall strip boundaries
+        int wallStripHeight = (int)projectedWallHeight;
+        int wallTopPixel = (WINDOW_HEIGHT / 2) - (wallStripHeight / 2);
+        int wallBottomPixel = (WINDOW_HEIGHT / 2) + (wallStripHeight / 2);
+        
+        // Clamp values
+        wallTopPixel = wallTopPixel < 0 ? 0 : wallTopPixel;
+        wallBottomPixel = wallBottomPixel >= WINDOW_HEIGHT ? WINDOW_HEIGHT - 1 : wallBottomPixel;
 
-        // Calculate wall positions
-        float wall_top_pixel = (WINDOW_HEIGHT / 2) - (wall_strip_height / 2);
-        float wall_bottom_pixel = (WINDOW_HEIGHT / 2) + (wall_strip_height / 2);
-
-        // Ensure walls don't render outside window bounds
-        if (wall_top_pixel < 0)
-            wall_top_pixel = 0;
-        if (wall_bottom_pixel > WINDOW_HEIGHT)
-            wall_bottom_pixel = WINDOW_HEIGHT;
-
-        // Calculate x position for the wall strip
-        int x = i * wall_strip_width;
-        float shading_factor;
-
-        shading_factor = 1.0f / (1.0f + (distance * 0.01f));
         // Draw ceiling
-        draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);  // Sky blue
-
-        // Draw wall strip
-        if (ray.was_hit_vertical)
-        {
-            int shaded_color = apply_shading(0x808080, shading_factor);
-            draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, shaded_color);  // Gray
+        for (int y = 0; y < wallTopPixel; y++) {
+            ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + i] = 
+                (mlx->maps.ceiling_rgb.r << 16) | 
+                (mlx->maps.ceiling_rgb.g << 8) | 
+                mlx->maps.ceiling_rgb.b;
         }
-        else 
+
+        // Determine texture X coordinate (where exactly on the wall we hit)
+        float wallHitX = ray->wall_hit_x;
+        float wallHitY = ray->wall_hit_y;
+        float textureOffsetX;
+
+        if (ray->was_hit_vertical) {
+            textureOffsetX = (int)(wallHitY) % TILE_SIZE;
+        } else {
+            textureOffsetX = (int)(wallHitX) % TILE_SIZE;
+        }
+        
+        // Scale texture offset to fit texture size
+        textureOffsetX = textureOffsetX * 64.0f / TILE_SIZE;
+
+        // Select texture based on wall face
+        int texNum = ray->wall_face;
+        t_tex *texture = &mlx->tex[texNum];
+
+        // Draw the wall slice
+        float step = 64.0f / (float)wallStripHeight;  // Using fixed texture height of 64
+        float texPos = 0;
+        if (wallStripHeight > WINDOW_HEIGHT) {
+            texPos = (wallStripHeight - WINDOW_HEIGHT) / 2.0f * step;
+        }
+
+        for (int y = wallTopPixel; y < wallBottomPixel; y++) 
         {
-            int shaded_color = apply_shading(0xFF0000, shading_factor);
-            draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, shaded_color);  // Gray
+            int textureOffsetY = (int)texPos & 63;  // Keep within 64 pixel bounds
+            texPos += step;
+
+            // Get color from texture
+            int texX = (int)textureOffsetX & 63;
+            uint32_t texelColor = texture->texture[64 * textureOffsetY + texX];
+            
+            // Apply distance shading
+            float shade = 1.0f - (perpDistance / (WINDOW_WIDTH * 0.8f));
+            shade = fmax(0.3f, shade);  // Limit minimum brightness
+            
+            uint32_t r = ((texelColor >> 16) & 0xFF) * shade;
+            uint32_t g = ((texelColor >> 8) & 0xFF) * shade;
+            uint32_t b = (texelColor & 0xFF) * shade;
+            
+            texelColor = (r << 16) | (g << 8) | b;
+            
+            ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + i] = texelColor;
         }
 
         // Draw floor
-        draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);  // Brown
-
-        i++;
+        for (int y = wallBottomPixel; y < WINDOW_HEIGHT; y++) {
+            ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + i] = 
+                (mlx->maps.floor_rgb.r << 16) | 
+                (mlx->maps.floor_rgb.g << 8) | 
+                mlx->maps.floor_rgb.b;
+        }
     }
 }
 
 
-// Helper function to draw vertical lines
-
-void draw_ray_line(t_mlx *mlx, float x1, float y1, float x2, float y2, int color)
+void cast(t_mlx *mlx, t_ray *ray)
 {
-    float dx = x2 - x1;
-    float dy = y2 - y1;
-    float step;
-    (void)mlx;
-    (void)color;
-    if (fabs(dx) > fabs(dy))
-        step = fabs(dx);
-    else
-        step = fabs(dy);
+    float ray_dir_x = cos(ray->ray_angle);
+    float ray_dir_y = sin(ray->ray_angle);
     
-    float x_inc = dx / step;
-    float y_inc = dy / step;
+    float pos_x = mlx->player.p_x / TILE_SIZE;
+    float pos_y = mlx->player.p_y / TILE_SIZE;
     
-    float x = x1;
-    float y = y1;
+    int map_x = (int)pos_x;
+    int map_y = (int)pos_y;
     
-    for (int i = 0; i <= step; i++)
-    {
-        x += x_inc;
-        y += y_inc;
+    float delta_dist_x = fabs(1.0f / ray_dir_x);
+    float delta_dist_y = fabs(1.0f / ray_dir_y);
+    
+    int step_x;
+    int step_y;
+    float side_dist_x;
+    float side_dist_y;
+    
+    // Calculate step and initial side_dist
+    if (ray_dir_x < 0) {
+        step_x = -1;
+        side_dist_x = (pos_x - map_x) * delta_dist_x;
+    } else {
+        step_x = 1;
+        side_dist_x = (map_x + 1.0f - pos_x) * delta_dist_x;
     }
-}
-
-void vertical_ray_intersection(t_mlx *mlx, t_ray *ray)
-{
-    float xintercept;
-    float yintercept;
-    float xstep;
-    float ystep;
-    float next_vertical_touch_x;
-    float next_vertical_touch_y;
-    ray->next_vertical_touch_x = 0;
-    ray->next_vertical_touch_y = 0;
-    int found_vertical_wall_hit = false;
-    xintercept = floor(mlx->player.p_x / TILE_SIZE) * TILE_SIZE;
-    if (ray->is_ray_facing_right)
-        xintercept += TILE_SIZE;
-
-    yintercept = mlx->player.p_y + (xintercept - mlx->player.p_x) * tan(ray->ray_angle);
-
-    xstep = TILE_SIZE;
-    if (ray->is_ray_facing_left)
-        xstep *= -1;
-
-    ystep = TILE_SIZE * tan(ray->ray_angle);
-    if (ray->is_ray_facing_up && ystep > 0)
-        ystep *= -1;
-    if (ray->is_ray_facing_down && ystep < 0)
-        ystep *= -1;
-    next_vertical_touch_x = xintercept;
-    next_vertical_touch_y = yintercept;
-    if (ray->is_ray_facing_left)
-        next_vertical_touch_x = xintercept - EPSILON;
-    while(next_vertical_touch_x >= 0 && 
-       next_vertical_touch_x <= mlx->maps.width * TILE_SIZE && 
-       next_vertical_touch_y >= 0 && 
-       next_vertical_touch_y <= mlx->maps.height * TILE_SIZE)
-    {
-        if(map_has_wall_at(mlx, next_vertical_touch_x, next_vertical_touch_y))
-        {
-            found_vertical_wall_hit = 1;
-            break;
+    if (ray_dir_y < 0) {
+        step_y = -1;
+        side_dist_y = (pos_y - map_y) * delta_dist_y;
+    } else {
+        step_y = 1;
+        side_dist_y = (map_y + 1.0f - pos_y) * delta_dist_y;
+    }
+    
+    // DDA Algorithm
+    int hit = 0;
+    int side = 0; // 0 for x-side, 1 for y-side
+    
+    while (hit == 0) {
+        if (side_dist_x < side_dist_y) {
+            side_dist_x += delta_dist_x;
+            map_x += step_x;
+            side = 0;
+        } else {
+            side_dist_y += delta_dist_y;
+            map_y += step_y;
+            side = 1;
         }
-        else
-        {
-            // Increment 'i' based on the distance
-            next_vertical_touch_x += xstep;
-            next_vertical_touch_y += ystep;
+        
+        // Check if ray has hit a wall
+        if (map_x < 0 || map_y < 0 || map_x >= mlx->maps.width || map_y >= mlx->maps.height) {
+            hit = 1;
+            ray->distance = FLT_MAX;
+            return;
+        }
+        if (mlx->maps.map[map_y][map_x] == '1') {
+            hit = 1;
         }
     }
-    ray->foundVerticalHit = found_vertical_wall_hit;
-    if (found_vertical_wall_hit)
-    {
-        float distance = sqrt(pow(next_vertical_touch_x - mlx->player.p_x, 2) + pow(next_vertical_touch_y - mlx->player.p_y, 2));
-        ray->vertical_distance = distance;
-    }
-    else
-        ray->vertical_distance = FLT_MAX;
-    ray->next_vertical_touch_x = next_vertical_touch_x;
-    ray->next_vertical_touch_y = next_vertical_touch_y;
-}
-void horizontal_line_intersection(t_mlx *mlx, t_ray *ray)
-{
-    float xintercept;
-    float yintercept;
-    float xstep;
-    float ystep;
-    float next_horizontal_touch_x = 0;
-    float next_horizontal_touch_y = 0;
-    int found_horizontal_wall_hit = 0;
-    yintercept = floor(mlx->player.p_y / TILE_SIZE) * TILE_SIZE;
-    if (ray->is_ray_facing_down)
-        yintercept += TILE_SIZE;
-    xintercept = mlx->player.p_x + (yintercept - mlx->player.p_y) / tan(ray->ray_angle);
-    ystep = TILE_SIZE;
-    if (ray->is_ray_facing_up)
-        ystep *= -1;
-
-    xstep = TILE_SIZE / tan(ray->ray_angle);
-    if (ray->is_ray_facing_left && xstep > 0)
-        xstep *= -1;
-    if (ray->is_ray_facing_right && xstep < 0)
-        xstep *= -1;
-
-    next_horizontal_touch_x = xintercept;
-    next_horizontal_touch_y = yintercept;
-
-    if (ray->is_ray_facing_up)
-        next_horizontal_touch_y = yintercept - EPSILON; // Move slightly up
-    // printf("ray angle = %f\n", ray->ray_angle);
-    // printf("next horizontal touch = %f\n", next_horizontal_touch_x);
-    // printf("map width => %d\n",mlx->maps.width);
-    while(next_horizontal_touch_x >= 0 && 
-       next_horizontal_touch_x <= mlx->maps.width * TILE_SIZE && 
-       next_horizontal_touch_y >= 0 && 
-       next_horizontal_touch_y <= mlx->maps.height * TILE_SIZE)
-    {
-        if(map_has_wall_at(mlx, next_horizontal_touch_x, next_horizontal_touch_y))
-        {
-            found_horizontal_wall_hit = 1;
-            break;
-        }
-        else
-        {
-            next_horizontal_touch_x += xstep;
-            next_horizontal_touch_y += ystep;
-        }
-    }
-    ray->foundHorzWallHit = found_horizontal_wall_hit;
-    if (found_horizontal_wall_hit)
-    {
-        float distance = sqrt(pow(next_horizontal_touch_x - mlx->player.p_x, 2) + pow(next_horizontal_touch_y - mlx->player.p_y, 2));
-        ray->horizontal_distance = distance;
-    }
-    else
-        ray->horizontal_distance = FLT_MAX;
-    ray->next_horizontal_touch_x = next_horizontal_touch_x;
-    ray->next_horizontal_touch_y = next_horizontal_touch_y;
-}
-
-void cast (t_mlx *mlx, t_ray *ray)
-{
-    vertical_ray_intersection(mlx, ray);
-    horizontal_line_intersection(mlx, ray);
-    if (ray->horizontal_distance < ray->vertical_distance)
-    {
-        ray->wall_hit_x = ray->next_horizontal_touch_x;
-        ray->wall_hit_y = ray->next_horizontal_touch_y;
-        ray->distance = ray->horizontal_distance;
+    
+    // Calculate exact hit position and distance
+    if (side == 0) {
+        ray->distance = (map_x - pos_x + (1 - step_x) / 2) / ray_dir_x;
+        ray->wall_hit_x = mlx->player.p_x + ray->distance * TILE_SIZE * ray_dir_x;
+        ray->wall_hit_y = mlx->player.p_y + ray->distance * TILE_SIZE * ray_dir_y;
         ray->was_hit_vertical = true;
-    }
-    else 
-    {
-        ray->wall_hit_x = ray->next_vertical_touch_x;
-        ray->wall_hit_y = ray->next_vertical_touch_y;
-        ray->distance = ray->vertical_distance;
+        ray->wall_face = (step_x > 0) ? EAST_FACE : WEST_FACE;
+    } else {
+        ray->distance = (map_y - pos_y + (1 - step_y) / 2) / ray_dir_y;
+        ray->wall_hit_x = mlx->player.p_x + ray->distance * TILE_SIZE * ray_dir_x;
+        ray->wall_hit_y = mlx->player.p_y + ray->distance * TILE_SIZE * ray_dir_y;
         ray->was_hit_vertical = false;
+        ray->wall_face = (step_y > 0) ? SOUTH_FACE : NORTH_FACE;
     }
-    //draw_ray_line(mlx, mlx->player.p_x, mlx->player.p_y, ray->wall_hit_x, ray->wall_hit_y, 0x00eeeee4);
+    
+    ray->distance *= TILE_SIZE; // Convert to pixel distance
 }
+
 void adjusting_rays(t_mlx *mlx)
 {
     int column = 0;
@@ -391,49 +404,49 @@ void adjusting_rays(t_mlx *mlx)
     }
 }
 
-void draw_line (t_mlx *mlx)
-{
-    int i = 0;
-    float x = 0;
-    float y = 0;
-    float angle = mlx->player.rotation_angle;
-    while(i < 30)
-    {
-        x = mlx->player.p_x + i * cos(angle);
-        y = mlx->player.p_y + i * sin(angle);
-        if (x >= 0 && x < mlx->maps.td_map_size && y >= 0 && x < mlx->maps.td_map_size)
-        {
-            my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00eeeee4);  
-        }
-        i++;
-    }
-    // draw_simple_rays(mlx);
-}
+// void draw_line (t_mlx *mlx)
+// {
+//     int i = 0;
+//     float x = 0;
+//     float y = 0;
+//     float angle = mlx->player.rotation_angle;
+//     while(i < 30)
+//     {
+//         x = mlx->player.p_x + i * cos(angle);
+//         y = mlx->player.p_y + i * sin(angle);
+//         if (x >= 0 && x < mlx->maps.td_map_size && y >= 0 && x < mlx->maps.td_map_size)
+//         {
+//             my_mlx_pixel_put(&mlx->img, (int)x, (int)y, 0x00eeeee4);  
+//         }
+//         i++;
+//     }
+//     // draw_simple_rays(mlx);
+// }
 void player_center_position(t_mlx *mlx, int x, int y)
 {
     mlx->player.p_x = x * TILE_SIZE + (TILE_SIZE / 2);
     mlx->player.p_y = y * TILE_SIZE + (TILE_SIZE / 2);
 }
 
-void draw_player(t_mlx *mlx)
-{
-    int i = 0;
-    int j = 0;
+// void draw_player(t_mlx *mlx)
+// {
+//     int i = 0;
+//     int j = 0;
 
-    int top_left_x = mlx->player.p_x - (mlx->player.size / 2); //added these to center the shit out of the player
-    int top_left_y = mlx->player.p_y - (mlx->player.size / 2);
-    while(i < mlx->player.size)
-    {
-        j = 0;
-        while(j < mlx->player.size)
-        {
-            my_mlx_pixel_put(&mlx->img, j + top_left_x, i + top_left_y, 0x00ffff00);
-            j++;
-        }
-        i++;
-    }
-    draw_line(mlx);
-}
+//     int top_left_x = mlx->player.p_x - (mlx->player.size / 2); //added these to center the shit out of the player
+//     int top_left_y = mlx->player.p_y - (mlx->player.size / 2);
+//     while(i < mlx->player.size)
+//     {
+//         j = 0;
+//         while(j < mlx->player.size)
+//         {
+//             my_mlx_pixel_put(&mlx->img, j + top_left_x, i + top_left_y, 0x00ffff00);
+//             j++;
+//         }
+//         i++;
+//     }
+//     draw_line(mlx);
+// }
 void render_all(t_mlx *mlx)
 {
     adjusting_rays(mlx);

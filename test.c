@@ -1,62 +1,61 @@
-#include "lib.h"
-
-typedef struct	s_data {
-	void	*img;
-	char	*addr;
-	int		bits_per_pixel;
-	int		line_length;
-	int		endian;
-}				t_data;
-
-void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
+void render_3D_projection_walls(t_mlx *mlx)
 {
-	char	*dst;
+    int i = 0;
+    float wall_strip_width = WINDOW_WIDTH / mlx->player.number_of_rays;
 
-    dst = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
-    *(unsigned int*)dst = color;
-}
+    // Define colors for each face
+    uint32_t north_face = 0xFF0000;  // Red
+    uint32_t south_face = 0x00FF00;  // Green
+    uint32_t east_face = 0x0000FF;   // Blue
+    uint32_t west_face = 0xFFFF00;   // Yellow
 
-void make_player (t_data *data)
-{
-	int i, j, size;
-	i = 0;
-	j = 0;
-	size = 123;
-	int x, y = 300;
-	while(i < size)
-	{
-		j = 0;
-		while(j < size)
-		{
-			my_mlx_pixel_put(data, 300 + i, y + j, 0x00ff0000);
-			j++;
-		}
-		i++;
-	}
-}
+    while (i < mlx->player.number_of_rays)
+    {
+        t_ray ray = mlx->player.rays[i];
+        float distance = ray.distance * cos(ray.ray_angle - mlx->player.rotation_angle);
+        float distance_projection_plane = (WINDOW_WIDTH / 2) / tan(mlx->player.fov / 2);
+        float wall_strip_height = (TILE_SIZE / distance) * distance_projection_plane;
 
-int	main(void)
-{
-	int i = 0;
-	char *map2[6] = {  
-        "110000",
-        "100001",
-        "101001",
-        "10N001",
-        "100101",
-        "111111"
-    };
-	
-	// void	*mlx;
-	// void	*mlx_win;
-	// t_data	img;
+        float wall_top_pixel = (WINDOW_HEIGHT / 2) - (wall_strip_height / 2);
+        float wall_bottom_pixel = (WINDOW_HEIGHT / 2) + (wall_strip_height / 2);
 
-	// mlx = mlx_init();
-	// mlx_win = mlx_new_window(mlx, 1920, 1080, "Hello world!");
-	// img.img = mlx_new_image(mlx, 1920, 1080);
-	// img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length,
-	// 							&img.endian);
-	// make_player (&img);
-	// mlx_put_image_to_window(mlx, mlx_win, img.img, 0, 0);
-	// mlx_loop(mlx);
+        if (wall_top_pixel < 0)
+            wall_top_pixel = 0;
+        if (wall_bottom_pixel > WINDOW_HEIGHT)
+            wall_bottom_pixel = WINDOW_HEIGHT;
+
+        int x = i * wall_strip_width;
+        float shading_factor = 1.0f / (1.0f + (distance * 0.01f));
+        uint32_t wall_color;
+
+        // Draw ceiling
+        draw_line_3D_helper(mlx, x, 0, wall_top_pixel, 0x87CEEB);
+
+        // Determine wall face based on grid hit
+        if (ray.was_hit_vertical)
+        {
+            if (ray.is_ray_facing_right)
+                wall_color = east_face;  // East face
+            else
+                wall_color = west_face;  // West face
+        }
+        else
+        {
+            if (ray.is_ray_facing_down)
+                wall_color = south_face;  // South face
+            else
+                wall_color = north_face;  // North face
+        }
+
+        // Apply shading
+        int shaded_color = apply_shading(wall_color, shading_factor);
+
+        // Draw wall strip
+        draw_line_3D_helper(mlx, x, wall_top_pixel, wall_bottom_pixel, shaded_color);
+
+        // Draw floor
+        draw_line_3D_helper(mlx, x, wall_bottom_pixel, WINDOW_HEIGHT, 0x8B4513);
+
+        i++;
+    }
 }

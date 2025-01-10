@@ -12,14 +12,49 @@
 #include <float.h>
 #include <fcntl.h>
 #include "libft/libft.h"
+#include <stdint.h>
 #define RED 0x00FF0000
 #define GREEN 0x0000FF00
 #define BLUE 0x000000FF
-#define TILE_SIZE 32
-#define WINDOW_WIDTH 1000
-#define WINDOW_HEIGHT 800
+#define TILE_SIZE 64
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 #define EPSILON 0.0001
+#define M_PI       3.14159265358979323846
+#define NORTH_FACE 0
+#define SOUTH_FACE 1
+#define EAST_FACE  2
+#define WEST_FACE  3
+#define NORTH_WALL_COLOR 0xCC0000
+#define SOUTH_WALL_COLOR 0x00CC00
+#define EAST_WALL_COLOR  0x0000CC
+#define WEST_WALL_COLOR  0xCCCC00
 // extern char *map[7];
+
+
+typedef struct s_pos 
+{
+    double x;
+    double y;
+}   t_pos;
+
+typedef struct s_texture {
+    char    *addr;
+    int     len;
+    int     bpp;
+} t_texture;
+
+
+typedef struct	s_tex
+{
+	char		*tex_path;
+	uint32_t			*texture;
+	int		width;
+	int		height;
+    char    *addr;
+    int     len;
+    int     bpp;
+}				t_tex;
 
 typedef struct s_ray 
 {
@@ -29,6 +64,12 @@ typedef struct s_ray
     float wall_hit_y;
     int foundHorzWallHit;
     int foundVerticalHit;
+    int horizontal_wall_content;
+    int vertical_wall_content;
+    float horizontal_wall_hit_x;
+    float horizontal_wall_hit_y;
+    float vertical_wall_hit_x;
+    float vertical_wall_hit_y;
     bool was_hit_vertical;
     bool was_hit_horizontal;
     float vertical_distance;
@@ -43,6 +84,11 @@ typedef struct s_ray
     float next_vertical_touch_y;
     float next_horizontal_touch_x;
     float next_horizontal_touch_y;
+    int wall_face;      // For texture selection (NORTH/SOUTH/EAST/WEST)
+    double wall_x;      // Exact hit position for texture mapping
+    int tex_x;          // X coordinate on the texture
+    int line_height;    // Height of wall slice
+    double perp_wall_dist; // Perpendicular distance to wall
 } t_ray;
 
 typedef struct s_player
@@ -76,6 +122,8 @@ typedef struct s_rgb
 typedef struct s_img 
 {
     void	*img;
+    int		img_width;
+	int		img_height;
 	char	*addr;
 	int		bits_per_pixel;
 	int		line_length;
@@ -107,9 +155,9 @@ typedef struct s_mlx
     void *win;
     t_img img;
     t_map maps;
+    t_tex tex[4];
     t_player player;
 } t_mlx  ;
-
 
 void player_position(t_mlx *mlx);
 void init_player(t_mlx *mlx);
@@ -147,9 +195,11 @@ long	ft_atomic_atoi(char *str);
 bool    check_path(char *path);
 void	save_colors(char *line, t_map *map);
 void    save_player(t_map *map);
-void print_map(t_map *maps);
-
+// void print_map(t_map *maps);
+void cleanup_textures(t_mlx *mlx);
+void cleanup_mlx(t_mlx *mlx);
+void cleanup_map(t_map *map);
 // loading textures 
-void load_textures(t_map *map, t_mlx *mlx);
+void	load_texture(t_mlx *mlx);
 
 #endif

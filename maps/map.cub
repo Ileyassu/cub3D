@@ -1,7 +1,7 @@
-NO textures/Mona_Lisa.png
-SO textures/Wheat_Field.png
-WE textures/the_starry_night.png
-EA textures/girl_with_a_pearl_earring.png
+NO textures/blue.xpm
+SO textures/brick.xpm
+WE textures/wood.xpm
+EA textures/grey.xpm
 
 C 0,0,33
 F 60,179,110
