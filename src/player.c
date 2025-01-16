@@ -16,7 +16,7 @@ void ray (t_mlx *mlx, t_ray *ray)
     ray->distance = 0;
     ray->vertical_distance = 0;
     ray->horizontal_distance = 0;
-    ray->is_ray_facing_down = ray->ray_angle > 0 && ray->ray_angle <  M_PI; //condition
+    ray->is_ray_facing_down = ray->ray_angle > 0 && ray->ray_angle <  M_PI;
     ray->is_ray_facing_up = !ray->is_ray_facing_down;
     ray->is_ray_facing_right = ray->ray_angle < 0.5 * M_PI || ray->ray_angle > 1.5 * M_PI;
     ray->is_ray_facing_left = !ray->is_ray_facing_right;
@@ -37,7 +37,7 @@ void ray_init (t_mlx *mlx)
 
 void set_starting_direction(t_mlx *mlx)
 {
-    char direction = mlx->player.starting_postition_in_map;
+    char direction = mlx->player.starting_face_in_map;
     
     if (direction == 'N')
         mlx->player.rotation_angle = 3 * M_PI / 2;    // 270 degrees (facing up)
@@ -54,11 +54,10 @@ void init_player(t_mlx *mlx)
     player_position(mlx);
     mlx->player.strafe_direction = 0;
     mlx->player.size = 4;
-    mlx->player.radius = 3;
     mlx->player.turn_direction = 0;
     mlx->player.walk_direction = 0;
-    set_starting_direction(mlx);  // Set the initial rotation based on map character
-    mlx->player.move_speed = 10.0;
+    set_starting_direction(mlx);
+    mlx->player.move_speed = 10.0 * (TILE_SIZE / 64.0);
     mlx->player.rotation_speed = 2 * (M_PI / 180);
     mlx->player.fov = 60 * (M_PI / 180);
     mlx->player.wall_strip_width = 1;
@@ -199,9 +198,17 @@ uint32_t get_wall_color(t_ray ray)
 }
 
 void clearColorBuffer(t_mlx *mlx, uint32_t color) {
-    for (int x = 0; x < WINDOW_WIDTH; x++)
-        for (int y = 0; y < WINDOW_HEIGHT; y++)
+    int x = 0;
+    while (x < WINDOW_WIDTH)
+    {
+        int y = 0;
+        while (y < WINDOW_HEIGHT)
+        {
             ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + x] = color;
+            y++;
+        }
+        x++;
+    }
 }
 
 
@@ -210,10 +217,12 @@ void draw_line_3D_helper(t_mlx *mlx, int x, int start_y, int end_y, int color) /
     if (start_y > end_y)
         return;
 
-    for (int y = start_y; y < end_y; y++)
+    int y = start_y;
+    while (y < end_y)
     {
         //mlx_destroy_image(mlx->mlx, mlx->img.img);
         my_mlx_pixel_put(&mlx->img, x, y, color);
+        y++;
     }
 }
 
@@ -256,7 +265,8 @@ float calculate_perp_distance(t_ray *ray, float player_angle)
 
 void render_3D_projection_walls(t_mlx *mlx)
 {
-    for (int i = 0; i < mlx->player.number_of_rays; i++) 
+    int i = 0;
+    while (i < mlx->player.number_of_rays) 
     {
         t_ray *ray = &mlx->player.rays[i];
         
@@ -277,11 +287,13 @@ void render_3D_projection_walls(t_mlx *mlx)
         wallBottomPixel = wallBottomPixel >= WINDOW_HEIGHT ? WINDOW_HEIGHT - 1 : wallBottomPixel;
 
         // Draw ceiling
-        for (int y = 0; y < wallTopPixel; y++) {
+        int y = 0;
+        while (y < wallTopPixel) {
             ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + i] = 
                 (mlx->maps.ceiling_rgb.r << 16) | 
                 (mlx->maps.ceiling_rgb.g << 8) | 
                 mlx->maps.ceiling_rgb.b;
+            y++;
         }
 
         // Determine texture X coordinate (where exactly on the wall we hit)
@@ -308,8 +320,8 @@ void render_3D_projection_walls(t_mlx *mlx)
         if (wallStripHeight > WINDOW_HEIGHT) {
             texPos = (wallStripHeight - WINDOW_HEIGHT) / 2.0f * step;
         }
-
-        for (int y = wallTopPixel; y < wallBottomPixel; y++) 
+        y = wallTopPixel;
+        while (y < wallBottomPixel) 
         {
             int textureOffsetY = (int)texPos & 63;  // Keep within 64 pixel bounds
             texPos += step;
@@ -329,15 +341,19 @@ void render_3D_projection_walls(t_mlx *mlx)
             texelColor = (r << 16) | (g << 8) | b;
             
             ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + i] = texelColor;
+            y++;
         }
-
+        // printf("rgb === %d\n",mlx->maps.floor_rgb.b);
         // Draw floor
-        for (int y = wallBottomPixel; y < WINDOW_HEIGHT; y++) {
+        y = wallBottomPixel;
+        while (y < WINDOW_HEIGHT) {
             ((uint32_t *)mlx->img.addr)[(WINDOW_WIDTH * y) + i] = 
                 (mlx->maps.floor_rgb.r << 16) | 
                 (mlx->maps.floor_rgb.g << 8) | 
                 mlx->maps.floor_rgb.b;
+                y++;
         }
+        i++;
     }
 }
 
@@ -355,7 +371,7 @@ void cast(t_mlx *mlx, t_ray *ray)
     
     float delta_dist_x = fabs(1.0f / ray_dir_x);
     float delta_dist_y = fabs(1.0f / ray_dir_y);
-    
+
     int step_x;
     int step_y;
     float side_dist_x;

@@ -38,28 +38,31 @@ void	parse_textures(t_map *map)
 		error_print("Invalid path", map);
 }
 
-void	file_parser(int fd, t_map *map)
+void    file_parser(int fd, t_map *map)
 {
-	char	*line;
-	while (1)
-	{
-		line = ft_strtrim(get_next_line(fd), "\n");
-		if (!line)
-			break ;
-		if (!map->no_texture || !map->so_texture || !map->we_texture
-			|| !map->ea_texture)
-			save_textures(line, map);
-		else if (!map->floor_color || !map->ceiling_color)
-			save_colors(line, map);
-		free(line);
-		if (map->no_texture && map->so_texture && map->we_texture
-			&& map->ea_texture && map->floor_color && map->ceiling_color)
-			break ;
-	}
-	if (!map->no_texture || !map->so_texture || !map->we_texture
-		|| !map->ea_texture || !map->floor_color || !map->ceiling_color)
-		error_print("Missing Textures/Color, or map empty", map);
-
+    char    *line;
+    while (1)
+    {
+        char *s = get_next_line(fd);
+        if (!s)
+            break ;
+        line = ft_strtrim(s, "\n");
+        free(s);
+        if (!line)
+            break ;
+        if (!map->no_texture || !map->so_texture || !map->we_texture
+            || !map->ea_texture)
+            save_textures(line, map);
+        else if (!map->floor_color || !map->ceiling_color)
+            save_colors(line, map);
+        free(line);
+        if (map->no_texture && map->so_texture && map->we_texture
+            && map->ea_texture && map->floor_color && map->ceiling_color)
+            break ;    
+    }
+    if (!map->no_texture || !map->so_texture || !map->we_texture
+        || !map->ea_texture || !map->floor_color || !map->ceiling_color)
+        error_print("Missing Textures/Color, or map empty", map);
 }
 
 char *ft_strjoin_gnl(char *s1, char *s2)

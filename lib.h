@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include "mlx/mlx.h"
+#include "mlx.h"
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
@@ -16,9 +16,9 @@
 #define RED 0x00FF0000
 #define GREEN 0x0000FF00
 #define BLUE 0x000000FF
-#define TILE_SIZE 64
-#define WINDOW_WIDTH 1920
-#define WINDOW_HEIGHT 1080
+#define TILE_SIZE 128
+#define WINDOW_WIDTH 860
+#define WINDOW_HEIGHT 720
 #define EPSILON 0.0001
 #define M_PI       3.14159265358979323846
 #define NORTH_FACE 0
@@ -35,6 +35,11 @@ typedef struct s_pos
     double x;
     double y;
 }   t_pos;
+
+typedef struct s_texture_map {
+    char *identifier;
+    int face_index;
+} t_texture_map;
 
 typedef struct s_texture {
     char    *addr;
@@ -91,7 +96,7 @@ typedef struct s_ray
 
 typedef struct s_player
 {
-    char starting_postition_in_map;
+    char starting_face_in_map;
     float p_x;
     float p_y;
     float size;
