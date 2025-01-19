@@ -36,6 +36,22 @@ typedef struct s_pos
     double y;
 }   t_pos;
 
+typedef struct s_ray_calc
+{
+	float	ray_dir_x;
+	float	ray_dir_y;
+	float	pos_x;
+	float	pos_y;
+	int		map_x;
+	int		map_y;
+	float	delta_dist_x;
+	float	delta_dist_y;
+	int		step_x;
+	int		step_y;
+	float	side_dist_x;
+	float	side_dist_y;
+}	t_ray_calc;
+
 typedef struct s_texture_map {
     char *identifier;
     int face_index;
@@ -58,6 +74,19 @@ typedef struct	s_tex
     int     len;
     int     bpp;
 }				t_tex;
+
+// Add to lib.h
+typedef struct s_wall_data {
+    int     strip_height;
+    int     top_pixel;
+    int     bottom_pixel;
+    float   perp_distance;
+    float   proj_plane;
+    float   proj_height;
+    float   tex_x;
+    float   tex_pos;
+    float   step;
+}   t_wall_data;
 
 typedef struct s_ray 
 {

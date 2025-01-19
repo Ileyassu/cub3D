@@ -58,7 +58,7 @@ void    file_parser(int fd, t_map *map)
         free(line);
         if (map->no_texture && map->so_texture && map->we_texture
             && map->ea_texture && map->floor_color && map->ceiling_color)
-            break ;    
+            break ;
     }
     if (!map->no_texture || !map->so_texture || !map->we_texture
         || !map->ea_texture || !map->floor_color || !map->ceiling_color)

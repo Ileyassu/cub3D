@@ -21,9 +21,9 @@ void cleanup_map(t_map *map)
     
     if (map->map) {
         for (int i = 0; i < map->height; i++) {
-            safe_free((void**)&map->map[i]);
+            free(map->map[i]);
         }
-        safe_free((void**)&map->map);
+        free(map->map);
     }
     
     // safe_free((void**)&map->no_texture);
@@ -84,13 +84,16 @@ void my_mlx_pixel_put(t_img *img, int x, int y, int color)
     *(unsigned int*)dst = color;
 }
 
-void mlx_initializer(t_mlx *mlx)
+int mlx_initializer(t_mlx *mlx)
 {
     mlx->mlx = mlx_init();
+    if (!mlx->mlx)
+        return (0);
     mlx->win = mlx_new_window(mlx->mlx, WINDOW_WIDTH, WINDOW_HEIGHT, "CUBED");
     mlx->img.img = mlx_new_image(mlx->mlx, WINDOW_WIDTH, WINDOW_HEIGHT);
     mlx->img.addr = mlx_get_data_addr(mlx->img.img, &mlx->img.bits_per_pixel
         ,&mlx->img.line_length, &mlx->img.endian);
+    return (1);
 }
 
 // char **map_calculator(t_map *maps)
@@ -415,7 +418,11 @@ int main(int ac, char **av)
     t_mlx mlx;
     start_parsing(av[1], &maps);
     // printmap(maps.map, maps.height);
-    mlx_initializer(&mlx);
+    if(!mlx_initializer(&mlx))
+    {
+        cleanup_map(&maps);
+        return 0;
+    }
     mlx.maps = maps;
     load_texture(&mlx);
     init_player(&mlx);
